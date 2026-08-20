@@ -41,9 +41,9 @@ LINT/vc_waiver.tcl
 LINT/sanity_lint_review.py
 LINT/data/lint_review_db.csv
 LINT/outputs/lint_review.xlsx
-LINT/outputs/generated_vc_waiver.tcl
 LINT/outputs/lint_summary.csv
 LINT/outputs/waiver_rule_audit.csv
+LINT/vc_waiver.tcl
 ```
 
 ## One-shot sample generation without options
@@ -55,7 +55,15 @@ cd LINT
 python sanity_lint_review.py
 ```
 
-This is the same as:
+This imports existing Excel edits, generates `vc_waiver.tcl`, parses current reports, merges them into `data/lint_review_db.csv`, marks issue state as `NEW` / `CHANGED` / `ACTIVE` / `WAIVED` / `REMOVED`, and exports a refreshed `outputs/lint_review.xlsx`.
+
+For the detailed loop, see:
+
+```text
+LINT/REVIEW_FLOW.md
+```
+
+This default command is also available as:
 
 ```powershell
 python sanity_lint_review.py run_all
@@ -99,12 +107,13 @@ python sanity_lint_review.py import-excel \
   --output data/lint_review_db.csv
 ```
 
-5. Generate waiver Tcl:
+5. Generate waiver Tcl from the edited Excel workbook:
 
 ```bash
-python sanity_lint_review.py generate-waiver \
+python sanity_lint_review.py generate-waiver-from-excel \
+  --excel outputs/lint_review.xlsx \
   --review-db data/lint_review_db.csv \
-  --output outputs/generated_vc_waiver.tcl
+  --output vc_waiver.tcl
 ```
 
 6. Audit redundant GUI waiver rules:
@@ -119,7 +128,7 @@ python sanity_lint_review.py audit-waivers \
 ## Review DB columns
 
 - `issue_id`: stable hash-based issue identifier.
-- `record_status`: `ACTIVE` or `REMOVED`.
+- `record_status`: `NEW`, `CHANGED`, `ACTIVE`, `WAIVED`, or `REMOVED`.
 - `review_status`: `UNREVIEWED`, `WAIVED`, `APPROVED`, or `APPROVED_WAIVE`.
 - `waiver_enabled`: `yes` or `no`.
 - `waiver_name`: Tcl waiver name.

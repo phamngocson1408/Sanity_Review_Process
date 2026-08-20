@@ -33,6 +33,7 @@ BASE_COLUMNS = [
     "waiver_name",
     "review_comment",
     "owner",
+    "review_date",
     "tag",
     "severity",
     "goal",
@@ -136,14 +137,20 @@ def default_paths(base_dir: Path) -> argparse.Namespace:
         review_db=base_dir / "data" / "lint_review_db.csv",
         excel=base_dir / "outputs" / "lint_review.xlsx",
         summary=base_dir / "outputs" / "lint_summary.csv",
-        generated_waiver=base_dir / "outputs" / "generated_vc_waiver.tcl",
+        generated_waiver=base_dir / "vc_waiver.tcl",
         waiver_audit=base_dir / "outputs" / "waiver_rule_audit.csv",
         user="",
     )
 
 
 def run_all(base_dir: Path) -> None:
-    cmd_bootstrap(default_paths(base_dir))
+    args = default_paths(base_dir)
+    if args.excel.exists():
+        import_excel_to_db(args.excel, args.review_db)
+        generate_waiver(args.review_db, args.generated_waiver, args.user)
+        print(f"imported excel: {args.excel}")
+        print(f"updated waiver: {args.generated_waiver}")
+    update_review_from_reports(args)
 
 
 def norm(value: str | None) -> str:
@@ -365,15 +372,17 @@ def row_from_issue(issue: dict[str, object], waiver_rules: dict[str, dict[str, o
         if norm(fields.get(key)):
             object_value = norm(fields.get(key))
             break
+    record_status = "WAIVED" if str(issue.get("source_report", "")) == "waived" else "ACTIVE"
     review_status = "WAIVED" if waiver_name else "UNREVIEWED"
     return {
         "issue_id": wid,
-        "record_status": "ACTIVE",
+        "record_status": record_status,
         "review_status": review_status,
         "waiver_enabled": "yes" if waiver_name else "no",
         "waiver_name": waiver_name,
         "review_comment": norm(str(waiver.get("Comment") or rule.get("comment") or "")),
         "owner": "",
+        "review_date": "",
         "tag": norm(fields.get("Tag")),
         "severity": norm(str(issue.get("severity", ""))),
         "goal": norm(fields.get("Goal")),
@@ -405,28 +414,57 @@ def collect_current_rows(full_report: Path, waived_report: Path | None, waiver_t
     return sorted(rows_by_id.values(), key=lambda r: (r["tag"], r["module"], r["file"], int(r["line"] or 0)))
 
 
+def similar_issue_key(row: dict[str, str]) -> tuple[str, ...]:
+    return (
+        norm(row.get("tag")),
+        norm(row.get("goal")),
+        norm(row.get("module")),
+        norm(row.get("file")),
+        norm(row.get("hierarchy")),
+        norm(row.get("object")),
+    )
+
+
+def preserve_review_fields(row: dict[str, str], old: dict[str, str]) -> None:
+    for key in ["review_status", "waiver_enabled", "waiver_name", "review_comment", "owner", "review_date", "filter_json", "waiver_user", "waiver_timestamp"]:
+        if old.get(key):
+            row[key] = old[key]
+
+
 def merge_rows(old_rows: list[dict[str, str]], current_rows: list[dict[str, str]]) -> list[dict[str, str]]:
     old_by_id = {row["issue_id"]: row for row in old_rows}
+    old_by_similar: dict[tuple[str, ...], list[dict[str, str]]] = {}
+    for old in old_rows:
+        old_by_similar.setdefault(similar_issue_key(old), []).append(old)
     current_by_id = {row["issue_id"]: row for row in current_rows}
     merged: list[dict[str, str]] = []
+    consumed_old_ids: set[str] = set()
 
     for issue_id_value, current in current_by_id.items():
         old = old_by_id.get(issue_id_value)
         row = dict(current)
         if old:
-            for key in ["review_status", "waiver_enabled", "waiver_name", "review_comment", "owner", "filter_json"]:
-                if old.get(key):
-                    row[key] = old[key]
-            row["record_status"] = "ACTIVE"
+            preserve_review_fields(row, old)
+            row["record_status"] = current.get("record_status") or "ACTIVE"
+            consumed_old_ids.add(old["issue_id"])
+        elif current.get("record_status") != "WAIVED":
+            similar_old = next((candidate for candidate in old_by_similar.get(similar_issue_key(current), []) if candidate.get("issue_id") not in consumed_old_ids), None)
+            if similar_old:
+                preserve_review_fields(row, similar_old)
+                row["record_status"] = "CHANGED"
+                consumed_old_ids.add(similar_old["issue_id"])
+            else:
+                row["record_status"] = "NEW"
         merged.append(row)
 
     for issue_id_value, old in old_by_id.items():
-        if issue_id_value not in current_by_id:
+        if issue_id_value not in current_by_id and issue_id_value not in consumed_old_ids:
             row = dict(old)
             row["record_status"] = "REMOVED"
             merged.append(row)
 
-    return sorted(merged, key=lambda r: (r["record_status"] != "ACTIVE", r["tag"], r["module"], r["file"], int(r["line"] or 0)))
+    status_order = {"NEW": 0, "CHANGED": 1, "ACTIVE": 2, "WAIVED": 3, "REMOVED": 4}
+    return sorted(merged, key=lambda r: (status_order.get(r["record_status"], 9), r["tag"], r["module"], r["file"], int(r["line"] or 0)))
 
 
 def summarize(rows: list[dict[str, str]]) -> list[dict[str, str]]:
@@ -711,6 +749,7 @@ def read_review_workbook(path: Path) -> list[dict[str, str]]:
             row.update(
                 {
                     "owner": source.get("Person in Charge", source.get("owner", "")),
+                    "review_date": source.get("Date", source.get("review_date", "")),
                     "review_status": source.get("Judgment", source.get("review_status", "")),
                     "review_comment": source.get("Comment", source.get("review_comment", "")),
                     "tag": source.get("Tag", source.get("tag", "")),
@@ -764,7 +803,7 @@ def row_to_tag_sheet(row: dict[str, str], columns: list[str], index: int) -> lis
     values = {
         "No.": str(index),
         "Person in Charge": row.get("owner", ""),
-        "Date": "",
+        "Date": row.get("review_date", ""),
         "Judgment": row.get("review_status", ""),
         "Comment": row.get("review_comment", ""),
         "Tag": row.get("tag", ""),
@@ -816,6 +855,11 @@ def export_excel(csv_path: Path, xlsx_path: Path, summary_path: Path | None = No
     for tag, tag_rows in by_tag.items():
         columns = tag_sheet_columns(tag_rows)
         sheets[tag] = [columns] + [row_to_tag_sheet(row, columns, idx) for idx, row in enumerate(tag_rows, start=1)]
+
+    removed_rows = [row for row in rows if row.get("record_status") == "REMOVED"]
+    if removed_rows:
+        columns = tag_sheet_columns(removed_rows)
+        sheets["Removed"] = [columns] + [row_to_tag_sheet(row, columns, idx) for idx, row in enumerate(removed_rows, start=1)]
 
     sheets["Instructions"] = [
         ["Sanity LINT Review Workbook"],
@@ -873,6 +917,30 @@ def generate_waiver(csv_path: Path, output_path: Path, user: str = "") -> None:
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def import_excel_to_db(excel_path: Path, review_db_path: Path) -> list[dict[str, str]]:
+    rows = read_review_workbook(excel_path)
+    write_csv(review_db_path, rows)
+    return rows
+
+
+def update_review_from_reports(args: argparse.Namespace) -> list[dict[str, str]]:
+    rows = collect_current_rows(args.full_report, args.waived_report, args.waiver_tcl)
+    old_db = args.old_db or args.review_db
+    if old_db and old_db.exists():
+        rows = merge_rows(read_csv(old_db), rows)
+    write_csv(args.review_db, rows)
+    export_excel(args.review_db, args.excel, args.summary)
+    if args.waiver_tcl and args.waiver_audit:
+        audit_waiver_rules(args.waiver_tcl, rows, args.waiver_audit)
+    print(f"review rows: {len(rows)}")
+    print(f"review db   : {args.review_db}")
+    print(f"excel       : {args.excel}")
+    print(f"summary     : {args.summary}")
+    if args.waiver_tcl and args.waiver_audit:
+        print(f"waiver audit: {args.waiver_audit}")
+    return rows
+
+
 def cmd_bootstrap(args: argparse.Namespace) -> None:
     rows = collect_current_rows(args.full_report, args.waived_report, args.waiver_tcl)
     if args.old_db and args.old_db.exists():
@@ -889,6 +957,10 @@ def cmd_bootstrap(args: argparse.Namespace) -> None:
     print(f"summary     : {args.summary}")
     if args.waiver_tcl and args.waiver_audit:
         print(f"waiver audit: {args.waiver_audit}")
+
+
+def cmd_update_review(args: argparse.Namespace) -> None:
+    update_review_from_reports(args)
 
 
 def cmd_parse(args: argparse.Namespace) -> None:
@@ -911,13 +983,19 @@ def cmd_export_excel(args: argparse.Namespace) -> None:
 
 
 def cmd_import_excel(args: argparse.Namespace) -> None:
-    rows = read_review_workbook(args.excel)
-    write_csv(args.output, rows)
+    rows = import_excel_to_db(args.excel, args.output)
     print(f"wrote {len(rows)} rows to {args.output}")
 
 
 def cmd_generate(args: argparse.Namespace) -> None:
     generate_waiver(args.review_db, args.output, args.user)
+    print(f"wrote {args.output}")
+
+
+def cmd_generate_from_excel(args: argparse.Namespace) -> None:
+    rows = import_excel_to_db(args.excel, args.review_db)
+    generate_waiver(args.review_db, args.output, args.user)
+    print(f"imported {len(rows)} rows from {args.excel}")
     print(f"wrote {args.output}")
 
 
@@ -930,7 +1008,7 @@ def cmd_audit_waivers(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Manage LINT sanity review with CSV/Excel/waiver Tcl.",
-        epilog="Run without arguments from the LINT directory to execute run_all with default paths.",
+        epilog="Run without arguments from the LINT directory to import Excel edits, generate vc_waiver.tcl, then update review DB/Excel from reports.",
     )
     sub = parser.add_subparsers()
 
@@ -941,6 +1019,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("run_all", help="Run the default LINT flow without path options.")
     p.set_defaults(func=lambda _args: run_all(Path(__file__).resolve().parent))
+
+    p = sub.add_parser("update-review", parents=[common_reports], help="Merge current reports into the review DB and export reviewer Excel.")
+    p.add_argument("--old-db", type=Path)
+    p.add_argument("--review-db", type=Path, default=Path("data/lint_review_db.csv"))
+    p.add_argument("--excel", type=Path, default=Path("outputs/lint_review.xlsx"))
+    p.add_argument("--summary", type=Path, default=Path("outputs/lint_summary.csv"))
+    p.add_argument("--waiver-audit", type=Path, default=Path("outputs/waiver_rule_audit.csv"))
+    p.set_defaults(func=cmd_update_review)
 
     p = sub.add_parser("bootstrap", parents=[common_reports], help="Create sample review DB, Excel workbook, summary, and generated waiver Tcl.")
     p.add_argument("--old-db", type=Path)
@@ -978,6 +1064,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--user", default="")
     p.set_defaults(func=cmd_generate)
+
+    p = sub.add_parser("generate-waiver-from-excel", help="Import reviewer Excel to DB, then generate VC LINT waiver Tcl.")
+    p.add_argument("--excel", type=Path, default=Path("outputs/lint_review.xlsx"))
+    p.add_argument("--review-db", type=Path, default=Path("data/lint_review_db.csv"))
+    p.add_argument("--output", type=Path, default=Path("vc_waiver.tcl"))
+    p.add_argument("--user", default="")
+    p.set_defaults(func=cmd_generate_from_excel)
 
     p = sub.add_parser("audit-waivers", help="Mark Tcl waiver rules as ACTIVE or REDUNDANT against a review DB.")
     p.add_argument("--review-db", type=Path, required=True)
