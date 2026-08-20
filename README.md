@@ -7,12 +7,30 @@ The important idea is:
 ```text
 LINT reports + GUI waiver Tcl
   -> Git-friendly review_db.csv
-  -> Excel workbook for reviewer
+  -> Excel workbook for reviewer, using the report_lint.full.xlsx style
   -> validated review_db.csv
   -> generated VC LINT waiver Tcl
 ```
 
 Excel is used as the reviewer UI. The CSV file is the Git-reviewable source of truth.
+
+The generated Excel workbook follows the familiar LINT report layout:
+
+```text
+Tree Summary
+W216
+W240
+W528
+...
+```
+
+Each tag sheet starts with reviewer columns:
+
+```text
+No., Person in Charge, Date, Judgment, Comment
+```
+
+The management columns needed for import/generate are kept at the right side of each tag sheet.
 
 ## Files
 
@@ -73,7 +91,7 @@ python sanity_lint_review.py export-excel \
   --summary outputs/lint_summary.csv
 ```
 
-4. After reviewer edits Excel, import it back to CSV:
+4. After reviewer edits `Person in Charge`, `Date`, `Judgment`, `Comment`, `waiver_enabled`, `waiver_name`, or `filter_json` in Excel, import it back to CSV:
 
 ```bash
 python sanity_lint_review.py import-excel \

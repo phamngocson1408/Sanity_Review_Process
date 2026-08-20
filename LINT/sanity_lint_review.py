@@ -103,6 +103,29 @@ NS_MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 NS_PACKAGE_REL = "http://schemas.openxmlformats.org/package/2006/relationships"
 
+REVIEW_SHEET_COLUMNS = ["No.", "Person in Charge", "Date", "Judgment", "Comment"]
+CORE_LINT_COLUMNS = [
+    "Tag",
+    "Description",
+    "Violation",
+    "Goal",
+    "Module",
+    "FileName",
+    "LineNumber",
+    "Statement",
+]
+MANAGEMENT_COLUMNS = [
+    "issue_id",
+    "record_status",
+    "waiver_enabled",
+    "waiver_name",
+    "source_report",
+    "waiver_user",
+    "waiver_timestamp",
+    "filter_json",
+    "fields_json",
+]
+
 
 def default_paths(base_dir: Path) -> argparse.Namespace:
     return argparse.Namespace(
@@ -465,13 +488,57 @@ def xlsx_col_name(index: int) -> str:
     return name
 
 
+def xlsx_col_index(ref: str) -> int:
+    match = re.match(r"([A-Z]+)", ref)
+    if not match:
+        return 0
+    index = 0
+    for ch in match.group(1):
+        index = index * 26 + ord(ch) - 64
+    return index - 1
+
+
+def safe_sheet_name(name: str, used: set[str]) -> str:
+    cleaned = re.sub(r"[\[\]:*?/\\]", "_", name or "Sheet").strip() or "Sheet"
+    base = cleaned[:31]
+    candidate = base
+    suffix = 1
+    while candidate.lower() in used:
+        tail = f"_{suffix}"
+        candidate = f"{base[:31 - len(tail)]}{tail}"
+        suffix += 1
+    used.add(candidate.lower())
+    return candidate
+
+
 def sheet_xml(rows: list[list[object]]) -> str:
+    if not rows:
+        rows = [[""]]
+    col_count = max(len(row) for row in rows)
+    row_count = len(rows)
     out = [
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
         f'<worksheet xmlns="{NS_MAIN}" xmlns:r="{NS_REL}">',
         "<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>",
-        "<sheetData>",
+        "<cols>",
     ]
+    widths = {
+        1: 7,
+        2: 18,
+        3: 13,
+        4: 14,
+        5: 42,
+        7: 48,
+        11: 64,
+        13: 72,
+    }
+    for col_idx in range(1, col_count + 1):
+        width = widths.get(col_idx, 18)
+        out.append(f'<col min="{col_idx}" max="{col_idx}" width="{width}" customWidth="1"/>')
+    out.extend([
+        "</cols>",
+        "<sheetData>",
+    ])
     for r_idx, row in enumerate(rows, start=1):
         out.append(f'<row r="{r_idx}">')
         for c_idx, value in enumerate(row):
@@ -479,7 +546,7 @@ def sheet_xml(rows: list[list[object]]) -> str:
             text = "" if value is None else str(value)
             out.append(f'<c r="{cell_ref}" t="inlineStr"><is><t xml:space="preserve">{html.escape(text)}</t></is></c>')
         out.append("</row>")
-    out.extend(["</sheetData>", '<autoFilter ref="A1:{}{}"/>'.format(xlsx_col_name(len(rows[0]) - 1), len(rows)), "</worksheet>"])
+    out.extend(["</sheetData>", '<autoFilter ref="A1:{}{}"/>'.format(xlsx_col_name(col_count - 1), row_count), "</worksheet>"])
     return "".join(out)
 
 
@@ -506,8 +573,9 @@ def write_xlsx(path: Path, sheets: dict[str, list[list[object]]]) -> None:
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
         f'<Relationships xmlns="{NS_PACKAGE_REL}">',
     ]
+    used_names: set[str] = set()
     for idx, (name, _rows) in enumerate(sheet_items, start=1):
-        safe_name = html.escape(name[:31])
+        safe_name = html.escape(safe_sheet_name(name, used_names))
         workbook_sheets.append(f'<sheet name="{safe_name}" sheetId="{idx}" r:id="rId{idx}"/>')
         rels.append(f'<Relationship Id="rId{idx}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet{idx}.xml"/>')
     workbook_sheets.append("</sheets></workbook>")
@@ -541,46 +609,222 @@ def write_xlsx(path: Path, sheets: dict[str, list[list[object]]]) -> None:
             zf.writestr(f"xl/worksheets/sheet{idx}.xml", sheet_xml(rows))
 
 
-def read_xlsx_first_sheet(path: Path) -> list[dict[str, str]]:
-    with zipfile.ZipFile(path) as zf:
-        root = ET.fromstring(zf.read("xl/worksheets/sheet1.xml"))
-        rows: list[list[str]] = []
-        for row_el in root.findall(f".//{{{NS_MAIN}}}sheetData/{{{NS_MAIN}}}row"):
-            values: list[str] = []
-            for cell in row_el.findall(f"{{{NS_MAIN}}}c"):
-                ref = cell.attrib.get("r", "")
-                col_match = re.match(r"([A-Z]+)", ref)
-                col_idx = 0
-                if col_match:
-                    col_idx = 0
-                    for ch in col_match.group(1):
-                        col_idx = col_idx * 26 + ord(ch) - 64
-                    col_idx -= 1
-                while len(values) <= col_idx:
-                    values.append("")
-                text_el = cell.find(f".//{{{NS_MAIN}}}t")
-                values[col_idx] = text_el.text if text_el is not None and text_el.text is not None else ""
-            rows.append(values)
-    if not rows:
+def read_shared_strings(zf: zipfile.ZipFile) -> list[str]:
+    try:
+        root = ET.fromstring(zf.read("xl/sharedStrings.xml"))
+    except KeyError:
         return []
-    header = rows[0]
-    return [{header[i]: row[i] if i < len(row) else "" for i in range(len(header))} for row in rows[1:]]
+    values: list[str] = []
+    for si in root.findall(f"{{{NS_MAIN}}}si"):
+        texts = [node.text or "" for node in si.findall(f".//{{{NS_MAIN}}}t")]
+        values.append("".join(texts))
+    return values
+
+
+def cell_text(cell: ET.Element, shared_strings: list[str]) -> str:
+    cell_type = cell.attrib.get("t")
+    if cell_type == "inlineStr":
+        text_el = cell.find(f".//{{{NS_MAIN}}}t")
+        return text_el.text if text_el is not None and text_el.text is not None else ""
+    value_el = cell.find(f"{{{NS_MAIN}}}v")
+    if value_el is None or value_el.text is None:
+        return ""
+    if cell_type == "s":
+        try:
+            return shared_strings[int(value_el.text)]
+        except (ValueError, IndexError):
+            return ""
+    return value_el.text
+
+
+def read_xlsx_sheets(path: Path) -> dict[str, list[dict[str, str]]]:
+    with zipfile.ZipFile(path) as zf:
+        shared_strings = read_shared_strings(zf)
+        workbook = ET.fromstring(zf.read("xl/workbook.xml"))
+        rels = ET.fromstring(zf.read("xl/_rels/workbook.xml.rels"))
+        relmap = {rel.attrib["Id"]: rel.attrib["Target"].lstrip("/") for rel in rels}
+        sheets: dict[str, list[dict[str, str]]] = {}
+        for sheet in workbook.findall(f".//{{{NS_MAIN}}}sheet"):
+            sheet_name = sheet.attrib["name"]
+            rel_id = sheet.attrib[f"{{{NS_REL}}}id"]
+            target = relmap[rel_id]
+            if not target.startswith("xl/"):
+                target = f"xl/{target}"
+            root = ET.fromstring(zf.read(target))
+            matrix: list[list[str]] = []
+            for row_el in root.findall(f".//{{{NS_MAIN}}}sheetData/{{{NS_MAIN}}}row"):
+                values: list[str] = []
+                for cell in row_el.findall(f"{{{NS_MAIN}}}c"):
+                    col_idx = xlsx_col_index(cell.attrib.get("r", ""))
+                    while len(values) <= col_idx:
+                        values.append("")
+                    values[col_idx] = cell_text(cell, shared_strings)
+                matrix.append(values)
+            if not matrix:
+                sheets[sheet_name] = []
+                continue
+            header = matrix[0]
+            rows = []
+            for row in matrix[1:]:
+                if not any(row):
+                    continue
+                rows.append({header[i]: row[i] if i < len(row) else "" for i in range(len(header)) if header[i]})
+            sheets[sheet_name] = rows
+        return sheets
+
+
+def read_xlsx_first_sheet(path: Path) -> list[dict[str, str]]:
+    sheets = read_xlsx_sheets(path)
+    return next(iter(sheets.values()), [])
+
+
+def read_review_workbook(path: Path) -> list[dict[str, str]]:
+    workbook_rows = read_xlsx_sheets(path)
+    imported: list[dict[str, str]] = []
+    for sheet_name, sheet_rows in workbook_rows.items():
+        if sheet_name in {"Tree Summary", "Instructions", "Summary", "ReviewDB"}:
+            if sheet_name == "ReviewDB":
+                imported.extend(sheet_rows)
+            continue
+        for source in sheet_rows:
+            if not source.get("issue_id"):
+                continue
+            try:
+                fields = json.loads(source.get("fields_json", "{}") or "{}")
+            except json.JSONDecodeError:
+                fields = {}
+            if not isinstance(fields, dict):
+                fields = {}
+            fields.update(
+                {
+                    "Tag": source.get("Tag", ""),
+                    "Description": source.get("Description", ""),
+                    "Violation": source.get("Violation", ""),
+                    "Goal": source.get("Goal", ""),
+                    "Module": source.get("Module", ""),
+                    "FileName": source.get("FileName", ""),
+                    "LineNumber": source.get("LineNumber", ""),
+                    "Statement": source.get("Statement", ""),
+                }
+            )
+            row = {col: source.get(col, "") for col in BASE_COLUMNS}
+            row.update(
+                {
+                    "owner": source.get("Person in Charge", source.get("owner", "")),
+                    "review_status": source.get("Judgment", source.get("review_status", "")),
+                    "review_comment": source.get("Comment", source.get("review_comment", "")),
+                    "tag": source.get("Tag", source.get("tag", "")),
+                    "goal": source.get("Goal", source.get("goal", "")),
+                    "module": source.get("Module", source.get("module", "")),
+                    "file": source.get("FileName", source.get("file", "")),
+                    "line": source.get("LineNumber", source.get("line", "")),
+                    "hierarchy": source.get("HIERARCHY") or source.get("DesignObjHierarchy") or source.get("hierarchy", ""),
+                    "object": source.get("Signal")
+                    or source.get("VariableName")
+                    or source.get("ModPortName")
+                    or source.get("object", ""),
+                    "statement": source.get("Statement", source.get("statement", "")),
+                    "description": source.get("Description", source.get("description", "")),
+                    "violation": source.get("Violation", source.get("violation", "")),
+                    "fields_json": json.dumps(fields, ensure_ascii=False),
+                }
+            )
+            imported.append(row)
+    return imported
+
+
+def tag_sheet_columns(rows: list[dict[str, str]]) -> list[str]:
+    dynamic: list[str] = []
+    seen = set(REVIEW_SHEET_COLUMNS + MANAGEMENT_COLUMNS)
+    for col in CORE_LINT_COLUMNS:
+        if col not in seen:
+            dynamic.append(col)
+            seen.add(col)
+    for row in rows:
+        try:
+            fields = json.loads(row.get("fields_json", "{}") or "{}")
+        except json.JSONDecodeError:
+            fields = {}
+        if not isinstance(fields, dict):
+            continue
+        for key in fields:
+            if key not in seen:
+                dynamic.append(key)
+                seen.add(key)
+    return REVIEW_SHEET_COLUMNS + dynamic + MANAGEMENT_COLUMNS
+
+
+def row_to_tag_sheet(row: dict[str, str], columns: list[str], index: int) -> list[str]:
+    try:
+        fields = json.loads(row.get("fields_json", "{}") or "{}")
+    except json.JSONDecodeError:
+        fields = {}
+    if not isinstance(fields, dict):
+        fields = {}
+    values = {
+        "No.": str(index),
+        "Person in Charge": row.get("owner", ""),
+        "Date": "",
+        "Judgment": row.get("review_status", ""),
+        "Comment": row.get("review_comment", ""),
+        "Tag": row.get("tag", ""),
+        "Description": row.get("description", ""),
+        "Violation": row.get("violation", ""),
+        "Goal": row.get("goal", ""),
+        "Module": row.get("module", ""),
+        "FileName": row.get("file", ""),
+        "LineNumber": row.get("line", ""),
+        "Statement": row.get("statement", ""),
+    }
+    values.update({key: str(value) for key, value in fields.items()})
+    for key in MANAGEMENT_COLUMNS:
+        values[key] = row.get(key, "")
+    return [values.get(col, "") for col in columns]
+
+
+def tree_summary_matrix(rows: list[dict[str, str]]) -> list[list[str]]:
+    header = ["Severity", "Stage", "Tag", "Count", "Waived", "Compressed", "Confirmed", "Remaining"]
+    active = [row for row in rows if row.get("record_status") != "REMOVED"]
+    grouped: dict[tuple[str, str], dict[str, int | str]] = OrderedDict()
+    for row in active:
+        key = (row.get("severity", ""), row.get("tag", ""))
+        if key not in grouped:
+            grouped[key] = {"count": 0, "waived": 0, "stage": ""}
+        if row.get("review_status", "").upper() == "WAIVED":
+            grouped[key]["waived"] = int(grouped[key]["waived"]) + 1
+        else:
+            grouped[key]["count"] = int(grouped[key]["count"]) + 1
+    matrix = [header]
+    for (severity, tag), counts in grouped.items():
+        confirmed = int(counts["count"]) + int(counts["waived"])
+        matrix.append([severity, str(counts["stage"]), tag, str(counts["count"]), str(counts["waived"]), "0", str(confirmed), str(counts["count"])])
+    matrix.append(["TOTAL", "", "", str(sum(1 for r in active if r.get("review_status", "").upper() != "WAIVED")), str(sum(1 for r in active if r.get("review_status", "").upper() == "WAIVED")), "0", str(len(active)), ""])
+    return matrix
 
 
 def export_excel(csv_path: Path, xlsx_path: Path, summary_path: Path | None = None) -> None:
     rows = read_csv(csv_path)
-    matrix = [BASE_COLUMNS] + [[row.get(col, "") for col in BASE_COLUMNS] for row in rows]
     summary_rows = summarize(rows)
-    summary_matrix = [["record_status", "review_status", "tag", "count"]] + [
-        [r["record_status"], r["review_status"], r["tag"], r["count"]] for r in summary_rows
-    ]
-    instructions = [
+    sheets: OrderedDict[str, list[list[object]]] = OrderedDict()
+    sheets["Tree Summary"] = tree_summary_matrix(rows)
+
+    by_tag: OrderedDict[str, list[dict[str, str]]] = OrderedDict()
+    for row in rows:
+        if row.get("record_status") == "REMOVED":
+            continue
+        by_tag.setdefault(row.get("tag", "UNKNOWN") or "UNKNOWN", []).append(row)
+    for tag, tag_rows in by_tag.items():
+        columns = tag_sheet_columns(tag_rows)
+        sheets[tag] = [columns] + [row_to_tag_sheet(row, columns, idx) for idx, row in enumerate(tag_rows, start=1)]
+
+    sheets["Instructions"] = [
         ["Sanity LINT Review Workbook"],
-        ["Edit review_status, waiver_enabled, waiver_name, review_comment, owner, and filter_json."],
+        ["This workbook follows the report_lint.full.xlsx style: Tree Summary plus one worksheet per tag."],
+        ["Reviewer-editable columns are Person in Charge, Date, Judgment, Comment, waiver_enabled, waiver_name, and filter_json."],
         ["Use '*' or '?' in filter_json values to generate Tcl '=~' wildcard filters."],
-        ["Do not edit issue_id unless the issue is intentionally recreated."],
+        ["Git should review LINT/data/lint_review_db.csv, not this binary Excel workbook."],
     ]
-    write_xlsx(xlsx_path, {"ReviewDB": matrix, "Summary": summary_matrix, "Instructions": instructions})
+    write_xlsx(xlsx_path, sheets)
     if summary_path:
         write_csv(summary_path, summary_rows, ["record_status", "review_status", "tag", "count"])
 
@@ -588,8 +832,8 @@ def export_excel(csv_path: Path, xlsx_path: Path, summary_path: Path | None = No
 def generate_waiver(csv_path: Path, output_path: Path, user: str = "") -> None:
     rows = read_csv(csv_path)
     lines = [
-        "# Generated by tools/sanity_lint_review.py",
-        f"# Generated at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        "# Generated by sanity_lint_review.py",
+        "# Source: review DB CSV",
         "",
     ]
     seen: set[str] = set()
@@ -618,7 +862,7 @@ def generate_waiver(csv_path: Path, output_path: Path, user: str = "") -> None:
         comment = row.get("review_comment", "")
         tag = row.get("tag", "")
         out_user = user or row.get("waiver_user") or os.getenv("USERNAME") or ""
-        timestamp = row.get("waiver_timestamp") or datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        timestamp = row.get("waiver_timestamp") or "N/A"
         lines.append(
             f"waive_violation -add {{{tcl_escape(name)}}}  "
             f"-comment {{{tcl_escape(comment)}}}  "
@@ -667,7 +911,7 @@ def cmd_export_excel(args: argparse.Namespace) -> None:
 
 
 def cmd_import_excel(args: argparse.Namespace) -> None:
-    rows = read_xlsx_first_sheet(args.excel)
+    rows = read_review_workbook(args.excel)
     write_csv(args.output, rows)
     print(f"wrote {len(rows)} rows to {args.output}")
 

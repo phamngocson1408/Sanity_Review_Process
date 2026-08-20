@@ -5,3 +5,7 @@ __pycache__/
 /data/
 /outputs/
 /tools/
+
+# Local verification artifacts.
+/LINT/outputs/imported_from_excel.csv
+/LINT/outputs/generated_from_imported_excel.tcl
