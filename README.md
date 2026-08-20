@@ -127,6 +127,24 @@ python sanity_lint_review.py audit-waivers \
   --output outputs/waiver_rule_audit.csv
 ```
 
+7. Clean generated files:
+
+```powershell
+python sanity_lint_review.py clean
+```
+
+Preview first:
+
+```powershell
+python sanity_lint_review.py clean --dry-run
+```
+
+Keep the generated waiver file:
+
+```powershell
+python sanity_lint_review.py clean --keep-waiver
+```
+
 ## Review DB columns
 
 - `issue_id`: stable hash-based issue identifier.
