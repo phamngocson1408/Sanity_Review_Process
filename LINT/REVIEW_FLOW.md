@@ -200,6 +200,28 @@ waiver_enabled == yes
 review_status in WAIVED / APPROVED / APPROVED_WAIVE
 ```
 
+The generated Tcl follows the GUI-style waiver file:
+
+```text
+one waive_violation command per waived issue
+waiver name = <Tag>_<Lint violation number>
+```
+
+Example:
+
+```text
+Tag: DeadCode-ML
+Violation: Lint:739
+```
+
+generates:
+
+```tcl
+waive_violation -add {DeadCode-ML_739} ...
+```
+
+The script does not collapse multiple waived issues that share the same `Waiver Name` in `report_lint.waived.log`, because the GUI-style `vc_waiver.tcl` keeps issue-level waiver commands.
+
 `filter_json` controls the generated Tcl `-filter`.
 
 Exact match:

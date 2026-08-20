@@ -32,6 +32,8 @@ No., Person in Charge, Date, Judgment, Comment
 
 The management columns needed for import/generate are kept at the right side of each tag sheet.
 
+`vc_waiver.tcl` is generated in GUI-style: one `waive_violation` command per waived issue, with names based on the LINT violation number such as `DeadCode-ML_739`.
+
 ## Files
 
 ```text

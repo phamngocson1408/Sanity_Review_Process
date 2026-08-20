@@ -347,6 +347,41 @@ def filter_expr(filter_fields: dict[str, str]) -> str:
     return " AND ".join(parts)
 
 
+def sanitize_waiver_tag(tag: str) -> str:
+    return tag.replace(".", "_").replace("/", "_").replace(" ", "_")
+
+
+def violation_number(row: dict[str, str]) -> str:
+    match = re.search(r"Lint:(\d+)", row.get("violation", ""))
+    return match.group(1) if match else ""
+
+
+def generated_waiver_name(row: dict[str, str], duplicate_waiver_names: set[str], used_names: set[str]) -> str:
+    lint_number = violation_number(row)
+    current_name = row.get("waiver_name", "").strip()
+    if current_name and current_name not in duplicate_waiver_names:
+        base = current_name
+    elif lint_number:
+        base = f"{sanitize_waiver_tag(row.get('tag', 'LINT'))}_{lint_number}"
+    else:
+        base = current_name or row.get("issue_id") or f"{sanitize_waiver_tag(row.get('tag', 'LINT'))}_{len(used_names) + 1}"
+
+    name = base
+    suffix = 1
+    while name in used_names:
+        suffix += 1
+        name = f"{base}_{suffix}"
+    used_names.add(name)
+    return name
+
+
+def should_emit_filter(row: dict[str, str]) -> bool:
+    # The existing GUI-generated Tcl is mostly one named waiver per violation
+    # without filters. W551 examples in vc_waiver.tcl_old use filters to keep
+    # waivers specific, so preserve that style for W551.
+    return row.get("tag") == "W551"
+
+
 def fields_for_filter(fields: dict[str, str]) -> OrderedDict[str, str]:
     result: OrderedDict[str, str] = OrderedDict()
     for key in FILTER_PRIORITY:
@@ -880,18 +915,21 @@ def generate_waiver(csv_path: Path, output_path: Path, user: str = "") -> None:
         "# Source: review DB CSV",
         "",
     ]
-    seen: set[str] = set()
-    for row in rows:
+    eligible_rows = [
+        row
+        for row in rows
+        if row.get("record_status") != "REMOVED"
+        and row.get("waiver_enabled", "").strip().lower() in {"yes", "y", "true", "1"}
+        and row.get("review_status", "").strip().upper() in {"WAIVED", "APPROVED", "APPROVED_WAIVE"}
+    ]
+    duplicate_waiver_names = {
+        name for name, count in Counter(row.get("waiver_name", "").strip() for row in eligible_rows if row.get("waiver_name", "").strip()).items() if count > 1
+    }
+    used_names: set[str] = set()
+    for row in eligible_rows:
         if row.get("record_status") == "REMOVED":
             continue
-        if row.get("waiver_enabled", "").strip().lower() not in {"yes", "y", "true", "1"}:
-            continue
-        if row.get("review_status", "").strip().upper() not in {"WAIVED", "APPROVED", "APPROVED_WAIVE"}:
-            continue
-        name = row.get("waiver_name") or row.get("issue_id") or f"{row.get('tag', 'LINT')}_{len(lines)}"
-        if name in seen:
-            continue
-        seen.add(name)
+        name = generated_waiver_name(row, duplicate_waiver_names, used_names)
         try:
             filter_fields = json.loads(row.get("filter_json", "{}") or "{}")
         except json.JSONDecodeError:
@@ -902,15 +940,15 @@ def generate_waiver(csv_path: Path, output_path: Path, user: str = "") -> None:
             except json.JSONDecodeError:
                 fields = {}
             filter_fields = fields_for_filter(fields if isinstance(fields, dict) else {})
-        expr = filter_expr(filter_fields)
         comment = row.get("review_comment", "")
         tag = row.get("tag", "")
         out_user = user or row.get("waiver_user") or os.getenv("USERNAME") or ""
         timestamp = row.get("waiver_timestamp") or "N/A"
+        filter_part = f" -filter {{{filter_expr(filter_fields)}}} " if should_emit_filter(row) and filter_fields else " "
         lines.append(
             f"waive_violation -add {{{tcl_escape(name)}}}  "
-            f"-comment {{{tcl_escape(comment)}}}  "
-            f"-filter {{{expr}}}  -app {{ lint }} -tag {{ {tcl_escape(tag)} }} "
+            f"-comment {{{tcl_escape(comment)}}} "
+            f"{filter_part} -app {{ lint }} -tag {{ {tcl_escape(tag)} }} "
             f"-user {{ {tcl_escape(out_user)} }} -timestamp {{ {tcl_escape(timestamp)} }}"
         )
     output_path.parent.mkdir(parents=True, exist_ok=True)
