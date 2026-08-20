@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+
+# Legacy/generated copies created before the LINT-local flow.
+/data/
+/outputs/
+/tools/

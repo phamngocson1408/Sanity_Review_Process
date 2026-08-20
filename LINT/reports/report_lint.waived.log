@@ -1,0 +1,2250 @@
+
+  -----------------------------------------------------------------------------
+  Report Summary
+  -----------------------------------------------------------------------------
+  Product Info
+    Name    : VC Static Master Shell
+    Version : V-2023.12-1 -- Jan 22, 2024
+
+  Report Info
+    Created : Aug 20, 2026  10:19:28
+    Options
+      -limit 0
+      -include_compressed
+      -only_waived (may be implicitly set)
+
+    TopLevelModule: BOS_AXICRYPT
+
+  -----------------------------------------------------------------------------
+  Management Summary
+  -----------------------------------------------------------------------------
+  Stage              Family      Fatals    Errors  Warnings     Infos    Waived
+  -----              --------  --------  --------  --------  --------  --------
+  LANGUAGE_CHECK     CODING           0         0         0         0        74
+  LINT_FORMAL_CHECK  CODING           0         0         0         0        42
+  STRUCTURAL_CHECK   CODING           0         0         0         0         4
+  -----              --------  --------  --------  --------  --------  --------
+  Total                               0         0         0         0       120
+
+
+  -----------------------------------------------------------------------------
+  Tree Summary
+  -----------------------------------------------------------------------------
+  Severity  Stage              Tag                     Count      Waived
+  --------  -----              ----------------------  -----  ----------
+  error     STRUCTURAL_CHECK   STARC05-3.3.1.4b            0           4
+  warning   LANGUAGE_CHECK     STARC05-2.11.3.1            0           1
+  warning   LANGUAGE_CHECK     W240                        0           8
+  warning   LANGUAGE_CHECK     W287b                       0          23
+  warning   LANGUAGE_CHECK     W528                        0          42
+  warning   LINT_FORMAL_CHECK  DeadCode-ML                 0           5
+  warning   LINT_FORMAL_CHECK  NotReachableFsmState        0           3
+  warning   LINT_FORMAL_CHECK  STARC05-2.2.3.3             0           1
+  warning   LINT_FORMAL_CHECK  W164a                       0          12
+  warning   LINT_FORMAL_CHECK  W415a                       0          20
+  warning   LINT_FORMAL_CHECK  W551                        0           1
+  --------  -----              ----------------------  -----  ----------
+  Total                                                    0         120
+
+
+
+  -----------------------------------------------------------------------------
+  STARC05-3.3.1.4b  (0 error/4 waived)
+  -----------------------------------------------------------------------------
+  Tag                 : STARC05-3.3.1.4b
+  Description         : Flip-flop '[Signal]' has neither asynchronous set nor asynchronous reset. [Hierarchy: '[DesignObjHierarchy]']
+  Violation           : Lint:702
+  Goal                : BOS_LINT_RULE
+  Signal              : q_sync_o[32:0]
+  DesignObjHierarchy  : u_axicrypt_apbasynchbridge.u_apbasyncbridgecompleter_uaxidma.u_completer_core.u_cdc_capt_nosync_resp_payload
+  Module              : css600_cdc_capt_nosync_noreset
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/CSSYS/RTL/logical/css600/logical/models/cells/generic/css600_cdc_capt_nosync_noreset.v
+  LineNumber          : 42
+  Statement           :         q_sync_o[IH:IL] <= d_async_i[IH:IL];
+  Waiver
+    Name              : STARC05-3_3_1_4b_562_564
+    Comment           : Waived because this is a 3rd-party IP
+    Filename         : vc_waiver.tcl
+    Line             : 3
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : STARC05-3.3.1.4b
+  Description         : Flip-flop '[Signal]' has neither asynchronous set nor asynchronous reset. [Hierarchy: '[DesignObjHierarchy]']
+  Violation           : Lint:703
+  Goal                : BOS_LINT_RULE
+  Signal              : q_sync_o[68:0]
+  DesignObjHierarchy  : u_axicrypt_apbasynchbridge.u_apbasyncbridgemrequester_uaxidma.u_requester_core.u_cdc_capt_nosync_req_payload
+  Module              : css600_cdc_capt_nosync_noreset
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/CSSYS/RTL/logical/css600/logical/models/cells/generic/css600_cdc_capt_nosync_noreset.v
+  LineNumber          : 42
+  Statement           :         q_sync_o[IH:IL] <= d_async_i[IH:IL];
+  Waiver
+    Name              : STARC05-3_3_1_4b_562_563
+    Comment           : Waived because this is a 3rd-party IP
+    Filename         : vc_waiver.tcl
+    Line             : 2
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : STARC05-3.3.1.4b
+  Description         : Flip-flop '[Signal]' has neither asynchronous set nor asynchronous reset. [Hierarchy: '[DesignObjHierarchy]']
+  Violation           : Lint:704
+  Goal                : BOS_LINT_RULE
+  Signal              : apb_async_req_payload_r[68:0]
+  DesignObjHierarchy  : u_axicrypt_apbasynchbridge.u_apbasyncbridgecompleter_uaxidma.u_completer_core
+  Module              : css600_apbasyncbridgecompleter_core
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/CSSYS/RTL/logical/css600/logical/css600_apbasyncbridge/verilog/css600_apbasyncbridgecompleter_core.v
+  LineNumber          : 119
+  Statement           :       apb_async_req_payload_r <= nxt_apb_async_req_payload_r;
+  Waiver
+    Name              : STARC05-3_3_1_4b_562_565
+    Comment           : Waived because this is a 3rd-party IP
+    Filename         : vc_waiver.tcl
+    Line             : 4
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : STARC05-3.3.1.4b
+  Description         : Flip-flop '[Signal]' has neither asynchronous set nor asynchronous reset. [Hierarchy: '[DesignObjHierarchy]']
+  Violation           : Lint:705
+  Goal                : BOS_LINT_RULE
+  Signal              : apb_async_resp_payload_r[32:0]
+  DesignObjHierarchy  : u_axicrypt_apbasynchbridge.u_apbasyncbridgemrequester_uaxidma.u_requester_core
+  Module              : css600_apbasyncbridgerequester_core
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/CSSYS/RTL/logical/css600/logical/css600_apbasyncbridge/verilog/css600_apbasyncbridgerequester_core.v
+  LineNumber          : 111
+  Statement           :       apb_async_resp_payload_r <= nxt_apb_async_resp_payload_r;
+  Waiver
+    Name              : STARC05-3_3_1_4b_562_562
+    Comment           : Waived because this is a 3rd-party IP
+    Filename         : vc_waiver.tcl
+    Line             : 1
+    State            : Waived
+
+  -----------------------------------------------------------------------------
+  DeadCode-ML  (0 warning/5 waived)
+  -----------------------------------------------------------------------------
+  Tag                 : DeadCode-ML
+  Description         : Dead code exists as the block in file '[FileName]' at line(s) '[LineRange]' is not reachable.
+  Violation           : Lint:709
+  Module              : AXICRYPT_CTRL
+  HIERARCHY           : u_axicrypt_top.u_axicrypt_top.u_axicrypt_ctrl
+  Statement           :     if (~I_RESETN) begin
+  LineRange           : 140-142
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_CTRL.v
+  LineNumber          : 140
+  Goal                : BOS_LINT_RULE
+  Waiver
+    Name              : DeadCode-ML_569
+    Comment           : This warning is not halmful and can be waived
+    Filename         : vc_waiver.tcl
+    Line             : 5
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : DeadCode-ML
+  Description         : Dead code exists as the block in file '[FileName]' at line(s) '[LineRange]' is not reachable.
+  Violation           : Lint:710
+  Module              : AXICRYPT_CTRL
+  HIERARCHY           : u_axicrypt_top.u_axicrypt_top.u_axicrypt_ctrl
+  Statement           :     if (~I_RESETN) begin
+  LineRange           : 150-152
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_CTRL.v
+  LineNumber          : 150
+  Goal                : BOS_LINT_RULE
+  Waiver
+    Name              : DeadCode-ML_569
+    Comment           : This warning is not halmful and can be waived
+    Filename         : vc_waiver.tcl
+    Line             : 5
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : DeadCode-ML
+  Description         : Dead code exists as the block in file '[FileName]' at line(s) '[LineRange]' is not reachable.
+  Violation           : Lint:711
+  Module              : css600_apbasyncbridgecompleter_core
+  HIERARCHY           : u_axicrypt_apbasynchbridge.u_apbasyncbridgecompleter_uaxidma.u_completer_core
+  Statement           :     begin
+  LineRange           : 177-185
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/CSSYS/RTL/logical/css600/logical/css600_apbasyncbridge/verilog/css600_apbasyncbridgecompleter_core.v
+  LineNumber          : 177
+  Goal                : BOS_LINT_RULE
+  Waiver
+    Name              : DeadCode-ML_572
+    Comment           : Waived because this is a 3rd-party IP
+    Filename         : vc_waiver.tcl
+    Line             : 7
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : DeadCode-ML
+  Description         : Dead code exists as the block in file '[FileName]' at line(s) '[LineRange]' is not reachable.
+  Violation           : Lint:712
+  Module              : css600_lpidevice_fsm
+  HIERARCHY           : u_axicrypt_apbasynchbridge.u_apbasyncbridgecompleter_uaxidma.u_completer_core.u_lpidevice_clkc.u_css600_lpidevice_fsm
+  Statement           :       UNUSED_2: begin
+  LineRange           : 92-94
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/CSSYS/RTL/logical/css600/logical/shared/css600_lpidevice/verilog/css600_lpidevice_fsm.v
+  LineNumber          : 92
+  Goal                : BOS_LINT_RULE
+  Waiver
+    Name              : DeadCode-ML_573
+    Comment           : Waived because this is a 3rd-party IP
+    Filename         : vc_waiver.tcl
+    Line             : 8
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : DeadCode-ML
+  Description         : Dead code exists as the block in file '[FileName]' at line(s) '[LineRange]' is not reachable.
+  Violation           : Lint:713
+  Module              : css600_lpidevice_fsm
+  HIERARCHY           : u_axicrypt_apbasynchbridge.u_apbasyncbridgecompleter_uaxidma.u_completer_core.u_lpidevice_clkc.u_css600_lpidevice_fsm
+  Statement           :       UNUSED_3: begin
+  LineRange           : 95-97
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/CSSYS/RTL/logical/css600/logical/shared/css600_lpidevice/verilog/css600_lpidevice_fsm.v
+  LineNumber          : 95
+  Goal                : BOS_LINT_RULE
+  Waiver
+    Name              : DeadCode-ML_573
+    Comment           : Waived because this is a 3rd-party IP
+    Filename         : vc_waiver.tcl
+    Line             : 8
+    State            : Waived
+
+  -----------------------------------------------------------------------------
+  NotReachableFsmState  (0 warning/3 waived)
+  -----------------------------------------------------------------------------
+  Tag                 : NotReachableFsmState
+  Description         : State '[FsmState]' may not be reachable in FSM '[FsmName]'
+  Violation           : Lint:706
+  Module              : css600_apbasyncbridgecompleter_core
+  HIERARCHY           : u_axicrypt_apbasynchbridge.u_apbasyncbridgecompleter_uaxidma.u_completer_core
+  FsmName             : state
+  FsmState            : SLVERR
+  Statement           :     SLVERR:
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/CSSYS/RTL/logical/css600/logical/css600_apbasyncbridge/verilog/css600_apbasyncbridgecompleter_core.v
+  LineNumber          : 176
+  Goal                : BOS_LINT_RULE
+  Waiver
+    Name              : NotReachableFsmState_566
+    Comment           : Waived because this is a 3rd-party IP
+    Filename         : vc_waiver.tcl
+    Line             : 9
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : NotReachableFsmState
+  Description         : State '[FsmState]' may not be reachable in FSM '[FsmName]'
+  Violation           : Lint:707
+  Module              : css600_lpidevice_fsm
+  HIERARCHY           : u_axicrypt_apbasynchbridge.u_apbasyncbridgecompleter_uaxidma.u_completer_core.u_lpidevice_clkc.u_css600_lpidevice_fsm
+  FsmName             : state
+  FsmState            : UNUSED_2
+  Statement           :       UNUSED_2: begin
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/CSSYS/RTL/logical/css600/logical/shared/css600_lpidevice/verilog/css600_lpidevice_fsm.v
+  LineNumber          : 92
+  Goal                : BOS_LINT_RULE
+  Waiver
+    Name              : NotReachableFsmState_567
+    Comment           : Waived because this is a 3rd-party IP
+    Filename         : vc_waiver.tcl
+    Line             : 10
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : NotReachableFsmState
+  Description         : State '[FsmState]' may not be reachable in FSM '[FsmName]'
+  Violation           : Lint:708
+  Module              : css600_lpidevice_fsm
+  HIERARCHY           : u_axicrypt_apbasynchbridge.u_apbasyncbridgecompleter_uaxidma.u_completer_core.u_lpidevice_clkc.u_css600_lpidevice_fsm
+  FsmName             : state
+  FsmState            : UNUSED_3
+  Statement           :       UNUSED_3: begin
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/CSSYS/RTL/logical/css600/logical/shared/css600_lpidevice/verilog/css600_lpidevice_fsm.v
+  LineNumber          : 95
+  Goal                : BOS_LINT_RULE
+  Waiver
+    Name              : NotReachableFsmState_568
+    Comment           : Waived because this is a 3rd-party IP
+    Filename         : vc_waiver.tcl
+    Line             : 11
+    State            : Waived
+
+  -----------------------------------------------------------------------------
+  STARC05-2.11.3.1  (0 warning/1 waived)
+  -----------------------------------------------------------------------------
+  Tag           : STARC05-2.11.3.1
+  Description   : Combinational and sequential parts of an FSM '[Module_Name].[Signal]' described in same always block
+  Violation     : Lint:773
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_TOP
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/AXICRYPT_TOP.v
+  LineNumber    : 323
+  Statement     :             if (r_keyexp_round_cnt == 5'd15)
+  Module_Name   : AXICRYPT_TOP
+  Signal        : r_keyexp_round_cnt
+  Waiver
+    Name        : STARC05-2_11_3_1_648
+    Comment     : It is common for Combinational and sequential parts of an register described in same always block
+    Filename   : vc_waiver.tcl
+    Line       : 106
+    State      : Waived
+
+  -----------------------------------------------------------------------------
+  STARC05-2.2.3.3  (0 warning/1 waived)
+  -----------------------------------------------------------------------------
+  Tag                 : STARC05-2.2.3.3
+  Description         : Flipflop '[Clock_Register]' is assigned over the same signal in an always construct for sequential circuits (at line '[CulpritLineNumber]')
+  Violation           : Lint:716
+  Goal                : BOS_LINT_RULE
+  Module              : AXICRYPT_WCC
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber          : 463
+  Statement           :             r_invalid_w_done <= 1'b1;
+  Clock_Register      : r_invalid_w_done
+  CulpritLineNumber   : 458
+  Waiver
+    Name              : STARC05-2_2_3_3_553
+    Comment           : Later assignment has higher priority
+    Filename         : vc_waiver.tcl
+    Line             : 104
+    State            : Waived
+
+  -----------------------------------------------------------------------------
+  W164a  (0 warning/12 waived)
+  -----------------------------------------------------------------------------
+  Tag                 : W164a
+  Description         : LHS[NodeName]: '[LHSExpr]' width [LHS_Size] is less than RHS: '[RHSExpr]' width [RHS_Size] in[NodeType] assignment [Hierarchy: '[HIERARCHY]']
+  Violation           : Lint:717
+  Goal                : BOS_LINT_RULE
+  Module              : ATU
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/ATU.v
+  LineNumber          : 15
+  Statement           : assign O_MADDR[AW-1:12] = I_SADDR[AW-1:12] - I_IRAM_BASE + I_DRAM_BASE;
+  NodeName            : 
+  LHSExpr             : O_MADDR[(AW - 1):12] 
+  LHS_Size            : 23
+  RHSExpr             : ((I_SADDR[(AW - 1):12]  - I_IRAM_BASE) + I_DRAM_BASE)
+  RHS_Size            : 24
+  NodeType            : 
+  HIERARCHY           : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC:u_w_atu@ATU
+  Waiver
+    Name              : W164a_576
+    Comment           : These counters updating logic are confirmed by designer
+    Filename         : vc_waiver.tcl
+    Line             : 20
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : W164a
+  Description         : LHS[NodeName]: '[LHSExpr]' width [LHS_Size] is less than RHS: '[RHSExpr]' width [RHS_Size] in[NodeType] assignment [Hierarchy: '[HIERARCHY]']
+  Violation           : Lint:718
+  Goal                : BOS_LINT_RULE
+  Module              : AXICRYPT_ADDR_CAL
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_ADDR_CAL.v
+  LineNumber          : 23
+  Statement           :     wire [ADDR_WIDTH-1:0] incr_addr = I_AXADDR + transfer_offset;
+  NodeName            : 
+  LHSExpr             : incr_addr
+  LHS_Size            : 35
+  RHSExpr             : (I_AXADDR + transfer_offset)
+  RHS_Size            : 36
+  NodeType            : 
+  HIERARCHY           : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC:u_axicrypt_iv@AXICRYPT_ADDR_CAL
+  Waiver
+    Name              : W164a_577
+    Comment           : These counters updating logic are confirmed by designer
+    Filename         : vc_waiver.tcl
+    Line             : 22
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : W164a
+  Description         : LHS[NodeName]: '[LHSExpr]' width [LHS_Size] is less than RHS: '[RHSExpr]' width [RHS_Size] in[NodeType] assignment [Hierarchy: '[HIERARCHY]']
+  Violation           : Lint:719
+  Goal                : BOS_LINT_RULE
+  Module              : AXICRYPT_ADDR_CAL
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_ADDR_CAL.v
+  LineNumber          : 27
+  Statement           :     wire [ADDR_WIDTH-1:0] next_addr       = I_AXADDR + transfer_offset;
+  NodeName            : 
+  LHSExpr             : next_addr
+  LHS_Size            : 35
+  RHSExpr             : (I_AXADDR + transfer_offset)
+  RHS_Size            : 36
+  NodeType            : 
+  HIERARCHY           : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC:u_axicrypt_iv@AXICRYPT_ADDR_CAL
+  Waiver
+    Name              : W164a_578
+    Comment           : This warning is not halmful and can be waived
+    Filename         : vc_waiver.tcl
+    Line             : 13
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : W164a
+  Description         : LHS[NodeName]: '[LHSExpr]' width [LHS_Size] is less than RHS: '[RHSExpr]' width [RHS_Size] in[NodeType] assignment [Hierarchy: '[HIERARCHY]']
+  Violation           : Lint:720
+  Goal                : BOS_LINT_RULE
+  Module              : AXICRYPT_AES
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/AES/AXICRYPT_aesCore.v
+  LineNumber          : 190
+  Statement           :         assign w_round_cnt_nxt = (r_round_cnt == ROUND_COUNT) ? init_val_round_cnt : r_round_cnt + 1'b1;
+  NodeName            : 
+  LHSExpr             : w_round_cnt_nxt
+  LHS_Size            : 4
+  RHSExpr             : (r_round_cnt + 1'b1)
+  RHS_Size            : 5
+  NodeType            : 
+  HIERARCHY           : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC:u_aes_core@AXICRYPT_AES:\AES_CLUSTER_OP[0] 
+  Waiver
+    Name              : W164a_579
+    Comment           : These counters updating logic are confirmed by designer
+    Filename         : vc_waiver.tcl
+    Line             : 15
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : W164a
+  Description         : LHS[NodeName]: '[LHSExpr]' width [LHS_Size] is less than RHS: '[RHSExpr]' width [RHS_Size] in[NodeType] assignment [Hierarchy: '[HIERARCHY]']
+  Violation           : Lint:721
+  Goal                : BOS_LINT_RULE
+  Module              : AXICRYPT_AES
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/AES/AXICRYPT_aesCore.v
+  LineNumber          : 209
+  Statement           :             assign w_input_first_round[p][q] = I_IV[127:0] + q;
+  NodeName            : 
+  LHSExpr             : w_input_first_round[p][q]
+  LHS_Size            : 128
+  RHSExpr             : (I_IV[127:0]  + q)
+  RHS_Size            : 129
+  NodeType            : 
+  HIERARCHY           : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC:u_aes_core@AXICRYPT_AES:\AES_CLUSTER_OP[0].AES_CORE_OP[1] 
+  Waiver
+    Name              : W164a_558
+    Comment           : This warning is not halmful and can be waived
+    Filename         : vc_waiver.tcl
+    Line             : 107
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : W164a
+  Description         : LHS[NodeName]: '[LHSExpr]' width [LHS_Size] is less than RHS: '[RHSExpr]' width [RHS_Size] in[NodeType] assignment [Hierarchy: '[HIERARCHY]']
+  Violation           : Lint:722
+  Goal                : BOS_LINT_RULE
+  Module              : AXICRYPT_RCC
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber          : 274
+  Statement           :                 r_mo_cnt <= r_mo_cnt + ((arlen_padded+MAX_LEN) >> $clog2(MAX_LEN));
+  NodeName            : 
+  LHSExpr             : r_mo_cnt
+  LHS_Size            : 16
+  RHSExpr             : (r_mo_cnt + ((arlen_padded + MAX_LEN) >> $clog2(MAX_LEN)))
+  RHS_Size            : 17
+  NodeType            : 
+  HIERARCHY           : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC
+  Waiver
+    Name              : W164a_582
+    Comment           : These counters updating logic are confirmed by designer
+    Filename         : vc_waiver.tcl
+    Line             : 16
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : W164a
+  Description         : LHS[NodeName]: '[LHSExpr]' width [LHS_Size] is less than RHS: '[RHSExpr]' width [RHS_Size] in[NodeType] assignment [Hierarchy: '[HIERARCHY]']
+  Violation           : Lint:723
+  Goal                : BOS_LINT_RULE
+  Module              : AXICRYPT_RCC
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber          : 284
+  Statement           :                 r_mo_cnt <= r_mo_cnt + ((arlen_padded+MAX_LEN) >> $clog2(MAX_LEN)) - 1;
+  NodeName            : 
+  LHSExpr             : r_mo_cnt
+  LHS_Size            : 16
+  RHSExpr             : ((r_mo_cnt + ((arlen_padded + MAX_LEN) >> $clog2(MAX_LEN))) - 1)
+  RHS_Size            : 17
+  NodeType            : 
+  HIERARCHY           : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC
+  Waiver
+    Name              : W164a_583
+    Comment           : These counters updating logic are confirmed by designer
+    Filename         : vc_waiver.tcl
+    Line             : 17
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : W164a
+  Description         : LHS[NodeName]: '[LHSExpr]' width [LHS_Size] is less than RHS: '[RHSExpr]' width [RHS_Size] in[NodeType] assignment [Hierarchy: '[HIERARCHY]']
+  Violation           : Lint:732
+  Goal                : BOS_LINT_RULE
+  Module              : BCAM_BYPASS
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM_BYPASS.v
+  LineNumber          : 280
+  Statement           :             CAM_trans_cnt_r_nxt[i] = CAM_trans_cnt_r[i] + 1;
+  NodeName            : 
+  LHSExpr             : CAM_trans_cnt_r_nxt[i]
+  LHS_Size            : 8
+  RHSExpr             : (CAM_trans_cnt_r[i] + 1)
+  RHS_Size            : 9
+  NodeType            : 
+  HIERARCHY           : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_bcam_bypass@BCAM_BYPASS
+  Waiver
+    Name              : W164a_592
+    Comment           : These counters updating logic are confirmed by designer
+    Filename         : vc_waiver.tcl
+    Line             : 19
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : W164a
+  Description         : LHS[NodeName]: '[LHSExpr]' width [LHS_Size] is less than RHS: '[RHSExpr]' width [RHS_Size] in[NodeType] assignment [Hierarchy: '[HIERARCHY]']
+  Violation           : Lint:733
+  Goal                : BOS_LINT_RULE
+  Module              : BCAM_BYPASS
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM_BYPASS.v
+  LineNumber          : 58
+  Statement           :     assign key_table_offset[i] = (MO-1-i)*({LEN_WIDTH{1'b1}}+1);
+  NodeName            : 
+  LHSExpr             : key_table_offset[i]
+  LHS_Size            : 7
+  RHSExpr             : (((MO - 1) - i) * ({ LEN_WIDTH{ 1'b1} }  + 1))
+  RHS_Size            : 12
+  NodeType            : 
+  HIERARCHY           : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_bcam_bypass@BCAM_BYPASS:\genblk1[0] 
+  Waiver
+    Name              : W164a_593
+    Comment           : These counters updating logic are confirmed by designer
+    Filename         : vc_waiver.tcl
+    Line             : 21
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : W164a
+  Description         : LHS[NodeName]: '[LHSExpr]' width [LHS_Size] is less than RHS: '[RHSExpr]' width [RHS_Size] in[NodeType] assignment [Hierarchy: '[HIERARCHY]']
+  Violation           : Lint:742
+  Goal                : BOS_LINT_RULE
+  Module              : BCAM
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM.v
+  LineNumber          : 306
+  Statement           :             CAM_trans_cnt_r_nxt[i] = CAM_trans_cnt_r[i] + 1;
+  NodeName            : 
+  LHSExpr             : CAM_trans_cnt_r_nxt[i]
+  LHS_Size            : 3
+  RHSExpr             : (CAM_trans_cnt_r[i] + 1)
+  RHS_Size            : 4
+  NodeType            : 
+  HIERARCHY           : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_srxidxtable@AXICRYPT_SRXIDXTABLE_CAM:u_cam_lite@BCAM
+  Waiver
+    Name              : W164a_604
+    Comment           : These counters updating logic are confirmed by designer
+    Filename         : vc_waiver.tcl
+    Line             : 18
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : W164a
+  Description         : LHS[NodeName]: '[LHSExpr]' width [LHS_Size] is less than RHS: '[RHSExpr]' width [RHS_Size] in[NodeType] assignment [Hierarchy: '[HIERARCHY]']
+  Violation           : Lint:747
+  Goal                : BOS_LINT_RULE
+  Module              : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber          : 748
+  Statement           :           r_idx_nxt   = r_idx + 1'b1;
+  NodeName            : 
+  LHSExpr             : r_idx_nxt
+  LHS_Size            : 8
+  RHSExpr             : (r_idx + 1'b1)
+  RHS_Size            : 9
+  NodeType            : 
+  HIERARCHY           : :BOS_AXICRYPT:\wide_sram[0].u_0 @ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1:u_data_decoder_dcls@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_top_dcls:u_d0@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_wrap:u_selftest@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  Waiver
+    Name              : W164a_597
+    Comment           : Temporarily waived by owner. This issue will be fixed in next release.
+    Filename         : vc_waiver.tcl
+    Line             : 99
+    State            : Waived
+  -----------------------------------------------------------------------------
+  Tag                 : W164a
+  Description         : LHS[NodeName]: '[LHSExpr]' width [LHS_Size] is less than RHS: '[RHSExpr]' width [RHS_Size] in[NodeType] assignment [Hierarchy: '[HIERARCHY]']
+  Violation           : Lint:748
+  Goal                : BOS_LINT_RULE
+  Module              : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber          : 749
+  Statement           :           r_cycle_nxt = r_cycle + 1'b1;
+  NodeName            : 
+  LHSExpr             : r_cycle_nxt
+  LHS_Size            : 8
+  RHSExpr             : (r_cycle + 1'b1)
+  RHS_Size            : 9
+  NodeType            : 
+  HIERARCHY           : :BOS_AXICRYPT:\wide_sram[0].u_0 @ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1:u_data_decoder_dcls@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_top_dcls:u_d0@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_wrap:u_selftest@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  Waiver
+    Name              : W164a_597
+    Comment           : Temporarily waived by owner. This issue will be fixed in next release.
+    Filename         : vc_waiver.tcl
+    Line             : 99
+    State            : Waived
+
+  -----------------------------------------------------------------------------
+  W240  (0 warning/8 waived)
+  -----------------------------------------------------------------------------
+  Tag           : W240
+  Description   : Input '[Signal]' declared but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:750
+  Goal          : BOS_LINT_RULE
+  Module        : BOS_AXICRYPT
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/BOS_AXICRYPT.v
+  LineNumber    : 17
+  Statement     :     input        [3:0]                  AXICRYPT_APB_SI0_PSTRB              ,   // No need
+  Signal        : AXICRYPT_APB_SI0_PSTRB[3:0]
+  HIERARCHY     : :BOS_AXICRYPT
+  Waiver
+    Name        : W240_624
+    Comment     : It is common to create inputs and not being read.
+    Filename   : vc_waiver.tcl
+    Line       : 58
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W240
+  Description   : Input '[Signal]' declared but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:751
+  Goal          : BOS_LINT_RULE
+  Module        : BOS_AXICRYPT
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/BOS_AXICRYPT.v
+  LineNumber    : 16
+  Statement     :     input        [2:0]                  AXICRYPT_APB_SI0_PPROT              ,   // No need
+  Signal        : AXICRYPT_APB_SI0_PPROT[2:0]
+  HIERARCHY     : :BOS_AXICRYPT
+  Waiver
+    Name        : W240_625
+    Comment     : It is common to create inputs and not being read.
+    Filename   : vc_waiver.tcl
+    Line       : 60
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W240
+  Description   : Input '[Signal]' declared but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:767
+  Goal          : BOS_LINT_RULE
+  Module        : css600_apbasyncbridgecompleter
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/CSSYS/RTL/logical/css600/logical/css600_apbasyncbridge/verilog/css600_apbasyncbridgecompleter.v
+  LineNumber    : 67
+  Statement     :   input  wire                        penable_c;
+  Signal        : penable_c
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_apbasynchbridge@AXICRYPT_APBASYNCHBRIDGE:u_apbasyncbridgecompleter_uaxidma@css600_apbasyncbridgecompleter
+  Waiver
+    Name        : W240_641
+    Comment     : It is common to create inputs and not being read.
+    Filename   : vc_waiver.tcl
+    Line       : 59
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W240
+  Description   : Input '[Signal]' declared but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:784
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_SFR
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_SFR.v
+  LineNumber    : 16
+  Statement     :     input        [31:0]     I_PADDR,
+  Signal        : I_PADDR[31:16]
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_sfr@AXICRYPT_SFR
+  Waiver
+    Name        : W240_651
+    Comment     : It is common to create inputs and not being read.
+    Filename   : vc_waiver.tcl
+    Line       : 53
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W240
+  Description   : Input '[Signal]' declared but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:786
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 85
+  Statement     :     input  [ADDR_WIDTH_SLAVE-1:0]       I_IRAM_BASE,
+  Signal        : I_IRAM_BASE[11:0]
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC
+  Waiver
+    Name        : W240_652
+    Comment     : It is common to create inputs and not being read.
+    Filename   : vc_waiver.tcl
+    Line       : 54
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W240
+  Description   : Input '[Signal]' declared but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:787
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 86
+  Statement     :     input  [ADDR_WIDTH_SLAVE-1:0]       I_DRAM_BASE,
+  Signal        : I_DRAM_BASE[11:0]
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC
+  Waiver
+    Name        : W240_653
+    Comment     : It is common to create inputs and not being read.
+    Filename   : vc_waiver.tcl
+    Line       : 56
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W240
+  Description   : Input '[Signal]' declared but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:803
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 34
+  Statement     :     input  [ADDR_WIDTH_SLAVE-1:0]       I_IRAM_BASE         ,
+  Signal        : I_IRAM_BASE[11:0]
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC
+  Waiver
+    Name        : W240_669
+    Comment     : It is common to create inputs and not being read.
+    Filename   : vc_waiver.tcl
+    Line       : 55
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W240
+  Description   : Input '[Signal]' declared but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:804
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 35
+  Statement     :     input  [ADDR_WIDTH_SLAVE-1:0]       I_DRAM_BASE         ,
+  Signal        : I_DRAM_BASE[11:0]
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC
+  Waiver
+    Name        : W240_670
+    Comment     : It is common to create inputs and not being read.
+    Filename   : vc_waiver.tcl
+    Line       : 57
+    State      : Waived
+
+  -----------------------------------------------------------------------------
+  W287b  (0 warning/23 waived)
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:752
+  Goal          : BOS_LINT_RULE
+  Module        : BOS_AXICRYPT
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/BOS_AXICRYPT.v
+  LineNumber    : 441
+  Statement     :             .SO_D_L                     (                                           ),
+  ModPortName   : SO_D_L
+  Waiver
+    Name        : W287b_626
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 50
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:753
+  Goal          : BOS_LINT_RULE
+  Module        : BOS_AXICRYPT
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/BOS_AXICRYPT.v
+  LineNumber    : 442
+  Statement     :             .SO_D_R                     (                                           ),
+  ModPortName   : SO_D_R
+  Waiver
+    Name        : W287b_627
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 51
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:754
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_APBASYNCHBRIDGE
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_APBASYNCHBRIDGE.v
+  LineNumber    : 117
+  Statement     :     .pnse_r                 (                                               ),
+  ModPortName   : pnse_r
+  Waiver
+    Name        : W287b_628
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 52
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:788
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 200
+  Statement     :     .O_EMPTY_CNT(),
+  ModPortName   : O_EMPTY_CNT
+  Waiver
+    Name        : W287b_654
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 45
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:789
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 261
+  Statement     : ) u_axicrypt_region_key_sel (
+  ModPortName   : O_REGION_SEL
+  Waiver
+    Name        : W287b_816
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 108
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:790
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 347
+  Statement     :     .O_AES_FSM_STATE    ()
+  ModPortName   : O_AES_FSM_STATE
+  Waiver
+    Name        : W287b_655
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 46
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:791
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 407
+  Statement     :     .O_EMPTY_CNT(),
+  ModPortName   : O_EMPTY_CNT
+  Waiver
+    Name        : W287b_654
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 45
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:792
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 423
+  Statement     :     .O_EMPTY_CNT(),
+  ModPortName   : O_EMPTY_CNT
+  Waiver
+    Name        : W287b_654
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 45
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:793
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 424
+  Statement     :     .O_DATA_CNT ()
+  ModPortName   : O_DATA_CNT
+  Waiver
+    Name        : W287b_658
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 48
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:805
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 178
+  Statement     : ) u_axicrypt_region_key_sel (
+  ModPortName   : O_REGION_SEL
+  Waiver
+    Name        : W287b_832
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 110
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:806
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 255
+  Statement     :     .O_EMPTY_CNT    (               ),  // not used
+  ModPortName   : O_EMPTY_CNT
+  Waiver
+    Name        : W287b_671
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 40
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:807
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 486
+  Statement     :     .O_AES_FSM_STATE    (                   )
+  ModPortName   : O_AES_FSM_STATE
+  Waiver
+    Name        : W287b_672
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 41
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:808
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 529
+  Statement     :     .O_IDX_FREE         (                   ),
+  ModPortName   : O_IDX_FREE
+  Waiver
+    Name        : W287b_835
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 109
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:809
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 570
+  Statement     :     .O_EMPTY_CNT    (               ),  // not used
+  ModPortName   : O_EMPTY_CNT
+  Waiver
+    Name        : W287b_671
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 40
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:810
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 607
+  Statement     :     .O_EMPTY_CNT    (                   ),  // not used
+  ModPortName   : O_EMPTY_CNT
+  Waiver
+    Name        : W287b_671
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 40
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:824
+  Goal          : BOS_LINT_RULE
+  Module        : BOS_AXICRYPT_PARITY
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/SAFETY/BOS_AXICRYPT_PARITY.v
+  LineNumber    : 236
+  Statement     :     .ERR_DCLS_B (/*float*/) // Confirmed by pnson
+  ModPortName   : ERR_DCLS_B
+  Waiver
+    Name        : W287b_616
+    Comment     : This warning can be waived. This output port is not used. If this port is removed it will cause fatal error in other IPs.
+    Filename   : dcls_parity_lint_waiver.tcl
+    Line       : 3
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:825
+  Goal          : BOS_LINT_RULE
+  Module        : BOS_ERROR_DOUBLE
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/BOS_LIB/RTL/BOS_ERROR_DOUBLE.v
+  LineNumber    : 66
+  Statement     :     .O_QN       (           )
+  ModPortName   : O_QN
+  Waiver
+    Name        : W287b_690
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 44
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:826
+  Goal          : BOS_LINT_RULE
+  Module        : BOS_ERROR_DOUBLE
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/BOS_LIB/RTL/BOS_ERROR_DOUBLE.v
+  LineNumber    : 74
+  Statement     :     .O_QN       (           )
+  ModPortName   : O_QN
+  Waiver
+    Name        : W287b_690
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 44
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:828
+  Goal          : BOS_LINT_RULE
+  Module        : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_top_dcls
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber    : 1027
+  Statement     :     ,.ERR_DCLS_B   ( /*float*/ )
+  ModPortName   : ERR_DCLS_B
+  Waiver
+    Name        : W287b_694
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 47
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:832
+  Goal          : BOS_LINT_RULE
+  Module        : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber    : 814
+  Statement     :     , .O_ERR_B   (/*float*/)
+  ModPortName   : O_ERR_B
+  Waiver
+    Name        : W287b_698
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 49
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:833
+  Goal          : BOS_LINT_RULE
+  Module        : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber    : 823
+  Statement     :     , .O_ERR_B   (/*float*/)
+  ModPortName   : O_ERR_B
+  Waiver
+    Name        : W287b_698
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 49
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:834
+  Goal          : BOS_LINT_RULE
+  Module        : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber    : 833
+  Statement     :     , .O_ERR_B   (/*float*/)
+  ModPortName   : O_ERR_B
+  Waiver
+    Name        : W287b_698
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 49
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W287b
+  Description   : Instance output port '[ModPortName]' is not connected
+  Violation     : Lint:835
+  Goal          : BOS_LINT_RULE
+  Module        : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber    : 842
+  Statement     :     , .O_ERR_B   (/*float*/)
+  ModPortName   : O_ERR_B
+  Waiver
+    Name        : W287b_698
+    Comment     : Output port is not connected warning.
+    Filename   : vc_waiver.tcl
+    Line       : 49
+    State      : Waived
+
+  -----------------------------------------------------------------------------
+  W415a  (0 warning/4 waived)
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( previous assignment at line [CulpritLineNumber] ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:715
+  Goal                 : BOS_LINT_RULE
+  Module               : AXICRYPT_WCC
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber           : 463
+  Statement            :             r_invalid_w_done <= 1'b1;
+  Signal               : r_invalid_w_done
+  CulpritLineNumber    : 458
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC
+  MultiLine
+    SgStmt
+      HDL_STATEMENT     :             r_invalid_w_done <= 1'b1;
+      FileName          : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+      LineNumber        : 463
+  MultiLine
+    SgStmt
+      HDL_STATEMENT     :             r_invalid_w_done     <= 1'b0;
+      FileName          : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+      LineNumber        : 458
+  Waiver
+    Name               : W415a_552
+    Comment            : Later assignment has higher priority
+    Filename          : vc_waiver.tcl
+    Line              : 105
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( previous assignment at line [CulpritLineNumber] ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:743
+  Goal                 : BOS_LINT_RULE
+  Module               : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber           : 690
+  Statement            :     w_onehot[r_idx] = 1'b1;
+  Signal               : w_onehot[r_idx]
+  CulpritLineNumber    : 689
+  HIERARCHY            : :BOS_AXICRYPT:\wide_sram[0].u_0 @ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1:u_data_decoder_dcls@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_top_dcls:u_d0@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_wrap:u_selftest@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  MultiLine
+    SgStmt
+      HDL_STATEMENT     :     w_onehot[r_idx] = 1'b1;
+      FileName          : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+      LineNumber        : 690
+  MultiLine
+    SgStmt
+      HDL_STATEMENT     :     w_onehot = '0;
+      FileName          : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+      LineNumber        : 689
+  Waiver
+    Name               : W415a_593
+    Comment            : Temporarily waived by owner. This issue will be fixed in next release.
+    Filename          : vc_waiver.tcl
+    Line              : 102
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( previous assignment at line [CulpritLineNumber] ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:744
+  Goal                 : BOS_LINT_RULE
+  Module               : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber           : 697
+  Statement            :     w_twohot[r_idx]  = 1'b1;
+  Signal               : w_twohot[r_idx]
+  CulpritLineNumber    : 696
+  HIERARCHY            : :BOS_AXICRYPT:\wide_sram[0].u_0 @ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1:u_data_decoder_dcls@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_top_dcls:u_d0@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_wrap:u_selftest@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  MultiLine
+    SgStmt
+      HDL_STATEMENT     :     w_twohot[r_idx]  = 1'b1;
+      FileName          : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+      LineNumber        : 697
+  MultiLine
+    SgStmt
+      HDL_STATEMENT     :     w_twohot = '0;
+      FileName          : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+      LineNumber        : 696
+  Waiver
+    Name               : W415a_594
+    Comment            : Temporarily waived by owner. This issue will be fixed in next release.
+    Filename          : vc_waiver.tcl
+    Line              : 103
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( previous assignment at line [CulpritLineNumber] ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:745
+  Goal                 : BOS_LINT_RULE
+  Module               : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber           : 698
+  Statement            :     w_twohot[w_idx2] = 1'b1;
+  Signal               : w_twohot[w_idx2]
+  CulpritLineNumber    : 696
+  HIERARCHY            : :BOS_AXICRYPT:\wide_sram[0].u_0 @ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1:u_data_decoder_dcls@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_top_dcls:u_d0@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_wrap:u_selftest@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  MultiLine
+    SgStmt
+      HDL_STATEMENT     :     w_twohot[w_idx2] = 1'b1;
+      FileName          : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+      LineNumber        : 698
+  MultiLine
+    SgStmt
+      HDL_STATEMENT     :     w_twohot = '0;
+      FileName          : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+      LineNumber        : 696
+  Waiver
+    Name               : W415a_595
+    Comment            : Temporarily waived by owner. This issue will be fixed in next release.
+    Filename          : vc_waiver.tcl
+    Line              : 101
+    State             : Waived
+
+  -----------------------------------------------------------------------------
+  W415a  (0 warning/16 waived)
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:724
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM_BYPASS
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM_BYPASS.v
+  LineNumber           : 75
+  Statement            :             r_cam_full_cnt = r_cam_full_cnt + w_CAM_trans_use[j];
+  Signal               : r_cam_full_cnt
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_bcam_bypass@BCAM_BYPASS
+  Waiver
+    Name               : W415a_584
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 31
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:725
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM_BYPASS
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM_BYPASS.v
+  LineNumber           : 113
+  Statement            :                 match_aridx_free = i;
+  Signal               : match_aridx_free
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_bcam_bypass@BCAM_BYPASS
+  Waiver
+    Name               : W415a_585
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 32
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:726
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM_BYPASS
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM_BYPASS.v
+  LineNumber           : 114
+  Statement            :                 hit_aridx_free = 1'b1;
+  Signal               : hit_aridx_free
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_bcam_bypass@BCAM_BYPASS
+  Waiver
+    Name               : W415a_586
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 33
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:727
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM_BYPASS
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM_BYPASS.v
+  LineNumber           : 144
+  Statement            :                 match_ridx = i;
+  Signal               : match_ridx
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_bcam_bypass@BCAM_BYPASS
+  Waiver
+    Name               : W415a_587
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 34
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:728
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM_BYPASS
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM_BYPASS.v
+  LineNumber           : 161
+  Statement            :                 hit_ar = 1'b1;
+  Signal               : hit_ar
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_bcam_bypass@BCAM_BYPASS
+  Waiver
+    Name               : W415a_588
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 35
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:729
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM_BYPASS
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM_BYPASS.v
+  LineNumber           : 162
+  Statement            :                 match_aridx = i;
+  Signal               : match_aridx
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_bcam_bypass@BCAM_BYPASS
+  Waiver
+    Name               : W415a_589
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 36
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:730
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM_BYPASS
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM_BYPASS.v
+  LineNumber           : 179
+  Statement            :                 hit_ar_new = 1'b1;
+  Signal               : hit_ar_new
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_bcam_bypass@BCAM_BYPASS
+  Waiver
+    Name               : W415a_590
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 38
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:731
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM_BYPASS
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM_BYPASS.v
+  LineNumber           : 180
+  Statement            :                 match_aridx_new = i;
+  Signal               : match_aridx_new
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_bcam_bypass@BCAM_BYPASS
+  Waiver
+    Name               : W415a_591
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 39
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:734
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM.v
+  LineNumber           : 104
+  Statement            :                 match_aridx_free = i;
+  Signal               : match_aridx_free
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_srxidxtable@AXICRYPT_SRXIDXTABLE_CAM:u_cam_lite@BCAM
+  Waiver
+    Name               : W415a_596
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 23
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:735
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM.v
+  LineNumber           : 105
+  Statement            :                 hit_aridx_free = 1'b1;
+  Signal               : hit_aridx_free
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_srxidxtable@AXICRYPT_SRXIDXTABLE_CAM:u_cam_lite@BCAM
+  Waiver
+    Name               : W415a_597
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 24
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:736
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM.v
+  LineNumber           : 158
+  Statement            :                 hit_r = 1'b1;
+  Signal               : hit_r
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_srxidxtable@AXICRYPT_SRXIDXTABLE_CAM:u_cam_lite@BCAM
+  Waiver
+    Name               : W415a_598
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 25
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:737
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM.v
+  LineNumber           : 159
+  Statement            :                 match_ridx = i;
+  Signal               : match_ridx
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_srxidxtable@AXICRYPT_SRXIDXTABLE_CAM:u_cam_lite@BCAM
+  Waiver
+    Name               : W415a_599
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 26
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:738
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM.v
+  LineNumber           : 179
+  Statement            :                 hit_ar = 1'b1;
+  Signal               : hit_ar
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_srxidxtable@AXICRYPT_SRXIDXTABLE_CAM:u_cam_lite@BCAM
+  Waiver
+    Name               : W415a_600
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 27
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:739
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM.v
+  LineNumber           : 180
+  Statement            :                 match_aridx = i;
+  Signal               : match_aridx
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_srxidxtable@AXICRYPT_SRXIDXTABLE_CAM:u_cam_lite@BCAM
+  Waiver
+    Name               : W415a_601
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 28
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:740
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM.v
+  LineNumber           : 197
+  Statement            :                 hit_ar_new = 1'b1;
+  Signal               : hit_ar_new
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_srxidxtable@AXICRYPT_SRXIDXTABLE_CAM:u_cam_lite@BCAM
+  Waiver
+    Name               : W415a_602
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 29
+    State             : Waived
+  -----------------------------------------------------------------------------
+  Tag                  : W415a
+  Description          : Signal [Signal] is being assigned multiple times ( assignment within same for-loop ) in same always block [Hierarchy: '[HIERARCHY]']
+  Violation            : Lint:741
+  Goal                 : BOS_LINT_RULE
+  Module               : BCAM
+  FileName             : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM.v
+  LineNumber           : 198
+  Statement            :                 match_aridx_new = i;
+  Signal               : match_aridx_new
+  HIERARCHY            : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_srxidxtable@AXICRYPT_SRXIDXTABLE_CAM:u_cam_lite@BCAM
+  Waiver
+    Name               : W415a_603
+    Comment            : These are from combinationl logic with for loop state, which is overriding assign.
+    Filename          : vc_waiver.tcl
+    Line              : 30
+    State             : Waived
+
+  -----------------------------------------------------------------------------
+  W528  (0 warning/42 waived)
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:755
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_APBASYNCHBRIDGE
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_APBASYNCHBRIDGE.v
+  LineNumber    : 134
+  Statement     :     .clk_r_qaccept_n        (ACLK_LPI_SI0_QACCEPT_N                         ),  
+  VariableName  : ACLK_LPI_SI0_QACCEPT_N
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_apbasynchbridge@AXICRYPT_APBASYNCHBRIDGE
+  Waiver
+    Name        : RTL_PRAGMA5
+    Comment     :  Waiver pragma in HDL source 
+    Filename   : vcst_rtdb/reports/pragma2waiver.tcl
+    Line       : 5
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:756
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_APBASYNCHBRIDGE
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_APBASYNCHBRIDGE.v
+  LineNumber    : 135
+  Statement     :     .clk_r_qactive          (ACLK_LPI_SI0_QACTIVE                           ),  
+  VariableName  : ACLK_LPI_SI0_QACTIVE
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_apbasynchbridge@AXICRYPT_APBASYNCHBRIDGE
+  Waiver
+    Name        : RTL_PRAGMA5
+    Comment     :  Waiver pragma in HDL source 
+    Filename   : vcst_rtdb/reports/pragma2waiver.tcl
+    Line       : 5
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:757
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_APBASYNCHBRIDGE
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_APBASYNCHBRIDGE.v
+  LineNumber    : 136
+  Statement     :     .clk_r_qdeny            (ACLK_LPI_SI0_QDENY                             ),  
+  VariableName  : ACLK_LPI_SI0_QDENY
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_apbasynchbridge@AXICRYPT_APBASYNCHBRIDGE
+  Waiver
+    Name        : RTL_PRAGMA5
+    Comment     :  Waiver pragma in HDL source 
+    Filename   : vcst_rtdb/reports/pragma2waiver.tcl
+    Line       : 5
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:758
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_APBASYNCHBRIDGE
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_APBASYNCHBRIDGE.v
+  LineNumber    : 99
+  Statement     :     .pwr_qaccept_n          (PCLK_LPI_SI0_PACCEPT_N                         ),  
+  VariableName  : PCLK_LPI_SI0_PACCEPT_N
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_apbasynchbridge@AXICRYPT_APBASYNCHBRIDGE
+  Waiver
+    Name        : RTL_PRAGMA3
+    Comment     :  Waiver pragma in HDL source 
+    Filename   : vcst_rtdb/reports/pragma2waiver.tcl
+    Line       : 3
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:759
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_APBASYNCHBRIDGE
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_APBASYNCHBRIDGE.v
+  LineNumber    : 100
+  Statement     :     .pwr_qactive            (PCLK_LPI_SI0_PACTIVE                           ),  
+  VariableName  : PCLK_LPI_SI0_PACTIVE
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_apbasynchbridge@AXICRYPT_APBASYNCHBRIDGE
+  Waiver
+    Name        : RTL_PRAGMA3
+    Comment     :  Waiver pragma in HDL source 
+    Filename   : vcst_rtdb/reports/pragma2waiver.tcl
+    Line       : 3
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:760
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_APBASYNCHBRIDGE
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_APBASYNCHBRIDGE.v
+  LineNumber    : 101
+  Statement     :     .pwr_qdeny              (PCLK_LPI_SI0_PDENY                             ),  
+  VariableName  : PCLK_LPI_SI0_PDENY
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_apbasynchbridge@AXICRYPT_APBASYNCHBRIDGE
+  Waiver
+    Name        : RTL_PRAGMA3
+    Comment     :  Waiver pragma in HDL source 
+    Filename   : vcst_rtdb/reports/pragma2waiver.tcl
+    Line       : 3
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:761
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_APBASYNCHBRIDGE
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_APBASYNCHBRIDGE.v
+  LineNumber    : 92
+  Statement     :     .clk_c_qaccept_n        (PCLK_LPI_SI0_QACCEPT_N                         ),  
+  VariableName  : PCLK_LPI_SI0_QACCEPT_N
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_apbasynchbridge@AXICRYPT_APBASYNCHBRIDGE
+  Waiver
+    Name        : RTL_PRAGMA2
+    Comment     :  Waiver pragma in HDL source 
+    Filename   : vcst_rtdb/reports/pragma2waiver.tcl
+    Line       : 2
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:762
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_APBASYNCHBRIDGE
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_APBASYNCHBRIDGE.v
+  LineNumber    : 93
+  Statement     :     .clk_c_qactive          (PCLK_LPI_SI0_QACTIVE                           ),  
+  VariableName  : PCLK_LPI_SI0_QACTIVE
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_apbasynchbridge@AXICRYPT_APBASYNCHBRIDGE
+  Waiver
+    Name        : RTL_PRAGMA2
+    Comment     :  Waiver pragma in HDL source 
+    Filename   : vcst_rtdb/reports/pragma2waiver.tcl
+    Line       : 2
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:763
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_APBASYNCHBRIDGE
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_APBASYNCHBRIDGE.v
+  LineNumber    : 94
+  Statement     :     .clk_c_qdeny            (PCLK_LPI_SI0_QDENY                             ),  
+  VariableName  : PCLK_LPI_SI0_QDENY
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_apbasynchbridge@AXICRYPT_APBASYNCHBRIDGE
+  Waiver
+    Name        : RTL_PRAGMA2
+    Comment     :  Waiver pragma in HDL source 
+    Filename   : vcst_rtdb/reports/pragma2waiver.tcl
+    Line       : 2
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:765
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_APBASYNCHBRIDGE
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_APBASYNCHBRIDGE.v
+  LineNumber    : 139
+  Statement     :     .pwakeup_r              (w_apbasyncbridgemstr_pwakeup_m_sig             ),
+  VariableName  : w_apbasyncbridgemstr_pwakeup_m_sig
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_apbasynchbridge@AXICRYPT_APBASYNCHBRIDGE
+  Waiver
+    Name        : W528_639
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 65
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:766
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_APBASYNCHBRIDGE
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/CTRL/AXICRYPT_APBASYNCHBRIDGE.v
+  LineNumber    : 120
+  Statement     :     .pprot_r                (w_apbasyncbridgemstr_pprot_m_sig               ),
+  VariableName  : w_apbasyncbridgemstr_pprot_m_sig[2:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_apbasynchbridge@AXICRYPT_APBASYNCHBRIDGE
+  Waiver
+    Name        : RTL_PRAGMA4
+    Comment     :  Waiver pragma in HDL source 
+    Filename   : vcst_rtdb/reports/pragma2waiver.tcl
+    Line       : 4
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:768
+  Goal          : BOS_LINT_RULE
+  Module        : css600_apbasyncbridgecompleter_core
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/CSSYS/RTL/logical/css600/logical/css600_apbasyncbridge/verilog/css600_apbasyncbridgecompleter_core.v
+  LineNumber    : 231
+  Statement     :     .cg_en       (unused_ok)
+  VariableName  : unused_ok
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_apbasynchbridge@AXICRYPT_APBASYNCHBRIDGE:u_apbasyncbridgecompleter_uaxidma@css600_apbasyncbridgecompleter:u_completer_core@css600_apbasyncbridgecompleter_core
+  Waiver
+    Name        : W528_642
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 69
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:769
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_TOP
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/AXICRYPT_TOP.v
+  LineNumber    : 1088
+  Statement     :     .O_STAT_RERR        (w_stat_rerr_rcc),
+  VariableName  : w_stat_rerr_rcc
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP
+  Waiver
+    Name        : W528_645
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 73
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:770
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_TOP
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/AXICRYPT_TOP.v
+  LineNumber    : 1028
+  Statement     :     .O_STAT_WERR        (w_stat_werr_wcc),
+  VariableName  : w_stat_werr_wcc
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP
+  Waiver
+    Name        : W528_646
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 75
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:771
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_TOP
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/AXICRYPT_TOP.v
+  LineNumber    : 704
+  Statement     :     .O_WERRAD           (w_werrad           ),
+  VariableName  : w_werrad[34]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP
+  Waiver
+    Name        : W528_647
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 77
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:772
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_TOP
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/AXICRYPT_TOP.v
+  LineNumber    : 703
+  Statement     :     .O_RERRAD           (w_rerrad           ),
+  VariableName  : w_rerrad[34]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP
+  Waiver
+    Name        : W528_649
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 81
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:794
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 370
+  Statement     :     .O_SREADY   (w_ks_ready),
+  VariableName  : w_ks_ready
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC
+  Waiver
+    Name        : W528_659
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 89
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:795
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 198
+  Statement     :     .O_MDATA_NXT({w_nxt_awaddr, w_nxt_awlen, w_nxt_bypass, w_nxt_awburst, w_nxt_awsize, w_nxt_wrap_mask}),
+  VariableName  : w_nxt_bypass
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC
+  Waiver
+    Name        : W528_660
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 91
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:796
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 198
+  Statement     :     .O_MDATA_NXT({w_nxt_awaddr, w_nxt_awlen, w_nxt_bypass, w_nxt_awburst, w_nxt_awsize, w_nxt_wrap_mask}),
+  VariableName  : w_nxt_wrap_mask[34:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC
+  Waiver
+    Name        : W528_661
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 93
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:797
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 198
+  Statement     :     .O_MDATA_NXT({w_nxt_awaddr, w_nxt_awlen, w_nxt_bypass, w_nxt_awburst, w_nxt_awsize, w_nxt_wrap_mask}),
+  VariableName  : w_nxt_awsize[2:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC
+  Waiver
+    Name        : W528_662
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 94
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:798
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 198
+  Statement     :     .O_MDATA_NXT({w_nxt_awaddr, w_nxt_awlen, w_nxt_bypass, w_nxt_awburst, w_nxt_awsize, w_nxt_wrap_mask}),
+  VariableName  : w_nxt_awlen[7:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC
+  Waiver
+    Name        : W528_663
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 95
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:799
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 198
+  Statement     :     .O_MDATA_NXT({w_nxt_awaddr, w_nxt_awlen, w_nxt_bypass, w_nxt_awburst, w_nxt_awsize, w_nxt_wrap_mask}),
+  VariableName  : w_nxt_awburst[1:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC
+  Waiver
+    Name        : W528_664
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 96
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:800
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 296
+  Statement     :     .O_AXADDR   (w_iv)
+  VariableName  : w_iv[4:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC
+  Waiver
+    Name        : W528_665
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 97
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:801
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 311
+  Statement     :     .O_A                (w_first_beat_addr)
+  VariableName  : w_first_beat_addr[4:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC
+  Waiver
+    Name        : W528_666
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 61
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:802
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_WCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/WCC/AXICRYPT_WCC.v
+  LineNumber    : 130
+  Statement     :     .O_MADDR    (w_awaddr)
+  VariableName  : w_awaddr[34]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_wcc@AXICRYPT_WCC
+  Waiver
+    Name        : W528_667
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 62
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:811
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 252
+  Statement     :     .O_MDATA_NXT    ({w_ar_fifo_addr_nxt, w_ar_fifo_len_nxt, w_ar_fifo_id_nxt, w_ar_fifo_bypass_nxt, w_ar_fifo_burst_nxt, w_ar_fifo_size_nxt, w_ar_fifo_wrap_mask_nxt}),
+  VariableName  : w_ar_fifo_bypass_nxt
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC
+  Waiver
+    Name        : W528_838
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 111
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:812
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 248
+  Statement     :     .O_SREADY       (w_ar_fifo_sready),
+  VariableName  : w_ar_fifo_sready
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC
+  Waiver
+    Name        : W528_839
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 112
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:813
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 451
+  Statement     :     .O_AXADDR   (w_iv           ) 
+  VariableName  : w_iv[4:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC
+  Waiver
+    Name        : W528_683
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 76
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:814
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 145
+  Statement     :     .O_MADDR        (w_araddr   )
+  VariableName  : w_araddr[34]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC
+  Waiver
+    Name        : W528_685
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 80
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:815
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 252
+  Statement     :     .O_MDATA_NXT    ({w_ar_fifo_addr_nxt, w_ar_fifo_len_nxt, w_ar_fifo_id_nxt, w_ar_fifo_bypass_nxt, w_ar_fifo_burst_nxt, w_ar_fifo_size_nxt, w_ar_fifo_wrap_mask_nxt}),
+  VariableName  : w_ar_fifo_wrap_mask_nxt[34:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC
+  Waiver
+    Name        : W528_842
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 113
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:816
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 252
+  Statement     :     .O_MDATA_NXT    ({w_ar_fifo_addr_nxt, w_ar_fifo_len_nxt, w_ar_fifo_id_nxt, w_ar_fifo_bypass_nxt, w_ar_fifo_burst_nxt, w_ar_fifo_size_nxt, w_ar_fifo_wrap_mask_nxt}),
+  VariableName  : w_ar_fifo_size_nxt[2:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC
+  Waiver
+    Name        : W528_843
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 114
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:817
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 252
+  Statement     :     .O_MDATA_NXT    ({w_ar_fifo_addr_nxt, w_ar_fifo_len_nxt, w_ar_fifo_id_nxt, w_ar_fifo_bypass_nxt, w_ar_fifo_burst_nxt, w_ar_fifo_size_nxt, w_ar_fifo_wrap_mask_nxt}),
+  VariableName  : w_ar_fifo_len_nxt[7:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC
+  Waiver
+    Name        : W528_844
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 115
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:818
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 252
+  Statement     :     .O_MDATA_NXT    ({w_ar_fifo_addr_nxt, w_ar_fifo_len_nxt, w_ar_fifo_id_nxt, w_ar_fifo_bypass_nxt, w_ar_fifo_burst_nxt, w_ar_fifo_size_nxt, w_ar_fifo_wrap_mask_nxt}),
+  VariableName  : w_ar_fifo_id_nxt[14:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC
+  Waiver
+    Name        : W528_845
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 116
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:819
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 252
+  Statement     :     .O_MDATA_NXT    ({w_ar_fifo_addr_nxt, w_ar_fifo_len_nxt, w_ar_fifo_id_nxt, w_ar_fifo_bypass_nxt, w_ar_fifo_burst_nxt, w_ar_fifo_size_nxt, w_ar_fifo_wrap_mask_nxt}),
+  VariableName  : w_ar_fifo_burst_nxt[1:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC
+  Waiver
+    Name        : W528_846
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 117
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:820
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_RCC
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_RCC.v
+  LineNumber    : 219
+  Statement     :     .O_A                (w_addr_shortcut    )
+  VariableName  : w_addr_shortcut[4:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC
+  Waiver
+    Name        : W528_686
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 82
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:821
+  Goal          : BOS_LINT_RULE
+  Module        : BCAM_BYPASS
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM_BYPASS.v
+  LineNumber    : 58
+  Statement     :     assign key_table_offset[i] = (MO-1-i)*({LEN_WIDTH{1'b1}}+1);
+  VariableName  : key_table_offset
+  ExprSize      : (112 bits)
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_bcam_bypass@BCAM_BYPASS
+  Waiver
+    Name        : W528_687
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 84
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:822
+  Goal          : BOS_LINT_RULE
+  Module        : AXICRYPT_SRXIDXTABLE_CAM
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/RCC/AXICRYPT_IDXTABLE_CAM.v
+  LineNumber    : 101
+  Statement     :     .hit_ar         (w_hit_ar           ),
+  VariableName  : w_hit_ar
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_srxidxtable@AXICRYPT_SRXIDXTABLE_CAM
+  Waiver
+    Name        : W528_688
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 85
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:823
+  Goal          : BOS_LINT_RULE
+  Module        : BCAM
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/IP/AXICRYPT/RTL/COMMON/BCAM.v
+  LineNumber    : 275
+  Statement     : assign debug_CAM_trans_cnt_r = CAM_trans_cnt_r[w_CAM_id_first];
+  VariableName  : debug_CAM_trans_cnt_r[2:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:u_axicrypt_top@AXICRYPT_TOP_DCLS:u_axicrypt_top@AXICRYPT_TOP:u_axicrypt_rcc@AXICRYPT_RCC:u_srxidxtable@AXICRYPT_SRXIDXTABLE_CAM:u_cam_lite@BCAM
+  Waiver
+    Name        : W528_689
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 86
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:827
+  Goal          : BOS_LINT_RULE
+  Module        : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber    : 254
+  Statement     :         .DDO       ( w_decoder_d_Q[134: 0]  ),
+  VariableName  : w_decoder_d_Q[6:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:\wide_sram[0].u_0 @ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1
+  Waiver
+    Name        : W528_693
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 87
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:829
+  Goal          : BOS_LINT_RULE
+  Module        : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_wrap
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber    : 914
+  Statement     :     .O_ERR_SELFTEST_E1  (E1_SELFTEST),
+  VariableName  : E1_SELFTEST
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:\wide_sram[0].u_0 @ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1:u_data_decoder_dcls@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_top_dcls:u_d0@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_wrap
+  Waiver
+    Name        : W528_695
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 88
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:830
+  Goal          : BOS_LINT_RULE
+  Module        : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_wrap
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber    : 915
+  Statement     :     .O_ERR_SELFTEST_E2  (E2_SELFTEST)
+  VariableName  : E2_SELFTEST
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:\wide_sram[0].u_0 @ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1:u_data_decoder_dcls@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_top_dcls:u_d0@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_wrap
+  Waiver
+    Name        : W528_696
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 90
+    State      : Waived
+  -----------------------------------------------------------------------------
+  Tag           : W528
+  Description   : Variable '[VariableName]'[ExprSize] set but not read.[Hierarchy: '[HIERARCHY]']
+  Violation     : Lint:831
+  Goal          : BOS_LINT_RULE
+  Module        : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_wrap
+  FileName      : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber    : 933
+  Statement     :   assign w_DDI_in_simple =      (!E1_INJ && !E2_INJ) ? w_DDI_in :
+  VariableName  : w_DDI_in_simple[143:0]
+  ExprSize      : 
+  HIERARCHY     : :BOS_AXICRYPT:\wide_sram[0].u_0 @ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1:u_data_decoder_dcls@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_top_dcls:u_d0@ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_wrap
+  Waiver
+    Name        : W528_697
+    Comment     : It is common to leave outputs unconnected
+    Filename   : vc_waiver.tcl
+    Line       : 92
+    State      : Waived
+
+  -----------------------------------------------------------------------------
+  W551  (0 warning/1 waived)
+  -----------------------------------------------------------------------------
+  Tag                 : W551
+  Description         : Case statement marked [NodeType] has a default clause
+  Violation           : Lint:746
+  Goal                : BOS_LINT_RULE
+  Module              : ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_data_decoder_st_ctrl
+  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1/ln04lpa_a00_mc_rd2rs_uhsr_slvt_128x137m4b1c1_wrapper_safety_sf64e64adi1.sv
+  LineNumber          : 723
+  Statement           :     unique casez (r_st)
+  NodeType            : unique_case
+  Waiver
+    Name              : W551_596
+    Comment           : Temporarily waived by owner. This issue will be fixed in next release.
+    Filename         : vc_waiver.tcl
+    Line             : 100
+    State            : Waived
