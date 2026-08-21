@@ -5,9 +5,9 @@ This repository contains a sample LINT review/waiver flow for Jira SDI-20.
 The important idea is:
 
 ```text
-LINT reports + GUI waiver Tcl
+report_lint.full.xlsx + reviewer decisions
   -> Git-friendly review_db.csv
-  -> Excel workbook for reviewer, using the report_lint.full.xlsx style
+  -> Excel workbook for reviewer
   -> validated review_db.csv
   -> generated VC LINT waiver Tcl
 ```
@@ -24,13 +24,13 @@ W528
 ...
 ```
 
-Each tag sheet starts with reviewer columns:
+Each tag sheet follows `report_lint.full.xlsx`. The reviewer-editable report columns are:
 
 ```text
-No., Person in Charge, Date, Judgment, Comment
+Judgment, Comment
 ```
 
-The management columns needed for import/generate are kept at the right side of each tag sheet.
+User-added columns are preserved in `lint_review.xlsx` for human notes, but ignored when `vc_waiver.tcl` is generated.
 
 `vc_waiver.tcl` is generated in GUI-style: one `waive_violation` command per waived issue, with names based on the LINT violation number such as `DeadCode-ML_739`.
 
@@ -38,7 +38,7 @@ The management columns needed for import/generate are kept at the right side of 
 
 ```text
 LINT/reports/report_lint.full.log
-LINT/reports/report_lint.waived.log
+LINT/report_lint.full.xlsx
 LINT/vc_waiver.tcl
 LINT/sanity_lint_review.py
 LINT/data/lint_review_db.csv
@@ -48,16 +48,26 @@ LINT/outputs/waiver_rule_audit.csv
 LINT/vc_waiver.tcl
 ```
 
-## One-shot sample generation without options
+## Two-command review flow
 
 Run this from the `LINT` directory:
 
 ```powershell
 cd LINT
-python sanity_lint_review.py
+python sanity_lint_review.py prepare-waiver
 ```
 
-This imports existing Excel edits, generates `vc_waiver.tcl`, parses current reports, merges them into `data/lint_review_db.csv`, marks issue state as `NEW` / `CHANGED` / `ACTIVE` / `WAIVED` / `REMOVED`, and exports a refreshed `outputs/lint_review.xlsx`.
+This imports existing Excel edits and generates `vc_waiver.tcl`.
+
+Then run the sanity tool so `reports/report_lint.full.log` is refreshed with the new waiver file.
+
+After the sanity tool finishes, run:
+
+```powershell
+python sanity_lint_review.py merge-report
+```
+
+This runs `make -f Makefile excel`, merges the refreshed `report_lint.full.xlsx` into `data/lint_review_db.csv`, marks issue state as `NEW` / `CHANGED` / `ACTIVE` / `REMOVED`, and exports a refreshed `outputs/lint_review.xlsx`.
 
 For the detailed loop, see:
 
@@ -65,60 +75,29 @@ For the detailed loop, see:
 LINT/REVIEW_FLOW.md
 ```
 
-This default command is also available as:
-
-```powershell
-python sanity_lint_review.py run_all
-```
+Running `python sanity_lint_review.py` without arguments prints the two-command sequence and does not modify files.
 
 ## Normal update flow
 
-1. Parse the newest report:
+1. Generate waiver Tcl from reviewer decisions:
 
 ```bash
-python sanity_lint_review.py parse \
-  --full-report reports/report_lint.full.log \
-  --waived-report reports/report_lint.waived.log \
-  --waiver-tcl vc_waiver.tcl \
-  --output data/current_lint_review_db.csv
+python sanity_lint_review.py prepare-waiver
 ```
 
-2. Merge with the previous Git-managed DB:
+2. Run the sanity tool so the reports are regenerated with the new `vc_waiver.tcl`.
+
+3. Convert and merge the refreshed report workbook:
 
 ```bash
-python sanity_lint_review.py merge \
-  --old-db data/lint_review_db.csv \
-  --current-db data/current_lint_review_db.csv \
-  --output data/lint_review_db.csv
+python sanity_lint_review.py merge-report
 ```
 
-3. Export reviewer Excel:
+4. Reviewer edits `Judgment` or `Comment` in `outputs/lint_review.xlsx`.
 
-```bash
-python sanity_lint_review.py export-excel \
-  --review-db data/lint_review_db.csv \
-  --excel outputs/lint_review.xlsx \
-  --summary outputs/lint_summary.csv
-```
+5. Repeat from step 1 for the next sanity run.
 
-4. After reviewer edits `Person in Charge`, `Date`, `Judgment`, `Comment`, `waiver_enabled`, `waiver_name`, or `filter_json` in Excel, import it back to CSV:
-
-```bash
-python sanity_lint_review.py import-excel \
-  --excel outputs/lint_review.xlsx \
-  --output data/lint_review_db.csv
-```
-
-5. Generate waiver Tcl from the edited Excel workbook:
-
-```bash
-python sanity_lint_review.py generate-waiver-from-excel \
-  --excel outputs/lint_review.xlsx \
-  --review-db data/lint_review_db.csv \
-  --output vc_waiver.tcl
-```
-
-6. Audit redundant GUI waiver rules:
+6. Audit redundant GUI waiver rules when needed:
 
 ```bash
 python sanity_lint_review.py audit-waivers \
@@ -148,25 +127,23 @@ python sanity_lint_review.py clean --keep-waiver
 ## Review DB columns
 
 - `issue_id`: stable hash-based issue identifier.
-- `record_status`: `NEW`, `CHANGED`, `ACTIVE`, `WAIVED`, or `REMOVED`.
+- `record_status`: `NEW`, `CHANGED`, `ACTIVE`, or `REMOVED`.
 - `review_status`: `UNREVIEWED`, `WAIVED`, `APPROVED`, or `APPROVED_WAIVE`.
-- `waiver_enabled`: `yes` or `no`.
-- `waiver_name`: Tcl waiver name.
 - `review_comment`: waiver/review reason.
-- `filter_json`: fields used to generate the Tcl `-filter`.
+- `filter_json`: internally derived fields used to generate the Tcl `-filter`.
 - `fields_json`: full parsed LINT fields for audit/debug.
 
 ## Redundant waiver removal
 
-`LINT/outputs/waiver_rule_audit.csv` compares the GUI-generated `vc_waiver.tcl` rules with the currently waived issues.
+`LINT/outputs/waiver_rule_audit.csv` compares the GUI-generated `vc_waiver.tcl` rules with the current review DB.
 
 - `ACTIVE`: waiver name is referenced by at least one current waived issue.
 - `REDUNDANT`: waiver name is not referenced by any current waived issue and should be reviewed for removal.
-- `MISSING_IN_TCL`: waived report references this waiver name, but it was not found in the input `vc_waiver.tcl`.
+- `MISSING_IN_TCL`: review DB references this waiver name, but it was not found in the input `vc_waiver.tcl`.
 
 ## Wildcard
 
-Wildcard is controlled in `filter_json`.
+Wildcard is controlled by the internally derived `filter_json`.
 
 Example:
 

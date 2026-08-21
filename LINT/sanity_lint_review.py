@@ -16,6 +16,7 @@ import json
 import os
 import posixpath
 import re
+import subprocess
 import sys
 import zipfile
 from collections import Counter, OrderedDict
@@ -103,6 +104,7 @@ FILTER_PRIORITY = [
 NS_MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 NS_PACKAGE_REL = "http://schemas.openxmlformats.org/package/2006/relationships"
+NS_CONTENT_TYPES = "http://schemas.openxmlformats.org/package/2006/content-types"
 
 REVIEW_SHEET_COLUMNS = ["No.", "Person in Charge", "Date", "Judgment", "Comment"]
 CORE_LINT_COLUMNS = [
@@ -127,10 +129,14 @@ MANAGEMENT_COLUMNS = [
     "fields_json",
 ]
 
+ET.register_namespace("", NS_MAIN)
+ET.register_namespace("r", NS_REL)
+
 
 def default_paths(base_dir: Path) -> argparse.Namespace:
     return argparse.Namespace(
         full_report=base_dir / "reports" / "report_lint.full.log",
+        report_excel=base_dir / "report_lint.full.xlsx",
         waived_report=base_dir / "reports" / "report_lint.waived.log",
         waiver_tcl=base_dir / "vc_waiver.tcl",
         old_db=None,
@@ -144,13 +150,17 @@ def default_paths(base_dir: Path) -> argparse.Namespace:
 
 
 def run_all(base_dir: Path) -> None:
-    args = default_paths(base_dir)
-    if args.excel.exists():
-        import_excel_to_db(args.excel, args.review_db)
-        generate_waiver(args.review_db, args.generated_waiver, args.user)
-        print(f"imported excel: {args.excel}")
-        print(f"updated waiver: {args.generated_waiver}")
-    update_review_from_reports(args)
+    print("The review flow is split into two explicit commands:")
+    print("")
+    print("  1) python sanity_lint_review.py prepare-waiver")
+    print("  2) Run the sanity tool so reports/report_lint.full.log is updated")
+    print("  3) python sanity_lint_review.py merge-report")
+    print("")
+    print("No files were changed.")
+
+
+def run_make_excel(base_dir: Path) -> None:
+    subprocess.run(["make", "-f", "Makefile", "excel"], cwd=base_dir, check=True)
 
 
 def generated_files(base_dir: Path, keep_waiver: bool = False) -> list[Path]:
@@ -494,9 +504,10 @@ def similar_issue_key(row: dict[str, str]) -> tuple[str, ...]:
 
 
 def preserve_review_fields(row: dict[str, str], old: dict[str, str]) -> None:
-    for key in ["review_status", "waiver_enabled", "waiver_name", "review_comment", "owner", "review_date", "filter_json", "waiver_user", "waiver_timestamp"]:
+    for key in ["review_status", "review_comment"]:
         if old.get(key):
             row[key] = old[key]
+    row["waiver_enabled"] = "yes" if row.get("review_status", "").upper() in {"WAIVED", "APPROVED", "APPROVED_WAIVE"} else "no"
 
 
 def merge_rows(old_rows: list[dict[str, str]], current_rows: list[dict[str, str]]) -> list[dict[str, str]]:
@@ -715,6 +726,169 @@ def write_xlsx(path: Path, sheets: dict[str, list[list[object]]]) -> None:
             zf.writestr(f"xl/worksheets/sheet{idx}.xml", sheet_xml(rows))
 
 
+def xlsx_sheet_targets(zf: zipfile.ZipFile) -> OrderedDict[str, str]:
+    workbook = ET.fromstring(zf.read("xl/workbook.xml"))
+    rels = ET.fromstring(zf.read("xl/_rels/workbook.xml.rels"))
+    relmap = {rel.attrib["Id"]: rel.attrib["Target"].lstrip("/") for rel in rels}
+    targets: OrderedDict[str, str] = OrderedDict()
+    for sheet in workbook.findall(f".//{{{NS_MAIN}}}sheet"):
+        sheet_name = sheet.attrib["name"]
+        rel_id = sheet.attrib[f"{{{NS_REL}}}id"]
+        target = relmap[rel_id]
+        if not target.startswith("xl/"):
+            target = f"xl/{target}"
+        targets[sheet_name] = posixpath.normpath(target)
+    return targets
+
+
+def rels_path_for_part(part_name: str) -> str:
+    directory = posixpath.dirname(part_name)
+    basename = posixpath.basename(part_name)
+    return f"{directory}/_rels/{basename}.rels"
+
+
+def resolve_part_target(source_part: str, target: str) -> str:
+    if target.startswith("/"):
+        return target.lstrip("/")
+    return posixpath.normpath(posixpath.join(posixpath.dirname(source_part), target))
+
+
+def relative_part_target(source_part: str, target_part: str) -> str:
+    return posixpath.relpath(target_part, posixpath.dirname(source_part))
+
+
+def read_rels(zf: zipfile.ZipFile, rels_path: str) -> ET.Element:
+    try:
+        return ET.fromstring(zf.read(rels_path))
+    except KeyError:
+        return ET.Element(f"{{{NS_PACKAGE_REL}}}Relationships")
+
+
+def next_rel_id(rels_root: ET.Element) -> str:
+    used = {
+        int(match.group(1))
+        for rel in rels_root.findall(f"{{{NS_PACKAGE_REL}}}Relationship")
+        if (match := re.fullmatch(r"rId(\d+)", rel.attrib.get("Id", "")))
+    }
+    value = 1
+    while value in used:
+        value += 1
+    return f"rId{value}"
+
+
+def merge_content_types(old_zf: zipfile.ZipFile, files: dict[str, bytes], copied_parts: set[str]) -> None:
+    if not copied_parts:
+        return
+    new_root = ET.fromstring(files["[Content_Types].xml"])
+    try:
+        old_root = ET.fromstring(old_zf.read("[Content_Types].xml"))
+    except KeyError:
+        old_root = ET.Element(f"{{{NS_CONTENT_TYPES}}}Types")
+    existing_defaults = {node.attrib.get("Extension") for node in new_root.findall(f"{{{NS_CONTENT_TYPES}}}Default")}
+    existing_overrides = {node.attrib.get("PartName") for node in new_root.findall(f"{{{NS_CONTENT_TYPES}}}Override")}
+
+    needed_exts = {part.rsplit(".", 1)[-1] for part in copied_parts if "." in posixpath.basename(part)}
+    for node in old_root.findall(f"{{{NS_CONTENT_TYPES}}}Default"):
+        ext = node.attrib.get("Extension")
+        if ext in needed_exts and ext not in existing_defaults:
+            new_root.append(ET.fromstring(ET.tostring(node)))
+            existing_defaults.add(ext)
+    for node in old_root.findall(f"{{{NS_CONTENT_TYPES}}}Override"):
+        part_name = node.attrib.get("PartName", "").lstrip("/")
+        if part_name in copied_parts and node.attrib.get("PartName") not in existing_overrides:
+            new_root.append(ET.fromstring(ET.tostring(node)))
+            existing_overrides.add(node.attrib.get("PartName"))
+    files["[Content_Types].xml"] = ET.tostring(new_root, encoding="utf-8", xml_declaration=True)
+
+
+def preserve_workbook_drawings(previous_excel: Path | None, xlsx_path: Path) -> None:
+    if not previous_excel or not previous_excel.exists() or not xlsx_path.exists():
+        return
+    with zipfile.ZipFile(xlsx_path, "r") as new_zf:
+        files = {name: new_zf.read(name) for name in new_zf.namelist()}
+    copied_parts: set[str] = set()
+    changed = False
+
+    with zipfile.ZipFile(previous_excel, "r") as old_zf:
+        old_targets = xlsx_sheet_targets(old_zf)
+        with zipfile.ZipFile(xlsx_path, "r") as new_zf:
+            new_targets = xlsx_sheet_targets(new_zf)
+        for sheet_name, old_sheet_part in old_targets.items():
+            new_sheet_part = new_targets.get(sheet_name)
+            if not new_sheet_part:
+                continue
+            old_sheet_root = ET.fromstring(old_zf.read(old_sheet_part))
+            old_drawings = old_sheet_root.findall(f"{{{NS_MAIN}}}drawing")
+            if not old_drawings:
+                continue
+            old_sheet_rels = read_rels(old_zf, rels_path_for_part(old_sheet_part))
+            old_rel_by_id = {rel.attrib.get("Id"): rel for rel in old_sheet_rels.findall(f"{{{NS_PACKAGE_REL}}}Relationship")}
+
+            new_sheet_root = ET.fromstring(files[new_sheet_part])
+            new_sheet_rels_path = rels_path_for_part(new_sheet_part)
+            new_sheet_rels = read_rels_from_bytes(files.get(new_sheet_rels_path))
+
+            for drawing in old_drawings:
+                old_rid = drawing.attrib.get(f"{{{NS_REL}}}id")
+                old_rel = old_rel_by_id.get(old_rid)
+                if old_rel is None:
+                    continue
+                old_drawing_part = resolve_part_target(old_sheet_part, old_rel.attrib.get("Target", ""))
+                if old_drawing_part not in old_zf.namelist():
+                    continue
+
+                copy_related_drawing_parts(old_zf, files, old_drawing_part, copied_parts)
+                new_rid = next_rel_id(new_sheet_rels)
+                ET.SubElement(
+                    new_sheet_rels,
+                    f"{{{NS_PACKAGE_REL}}}Relationship",
+                    {
+                        "Id": new_rid,
+                        "Type": old_rel.attrib.get("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing"),
+                        "Target": relative_part_target(new_sheet_part, old_drawing_part),
+                    },
+                )
+                ET.SubElement(new_sheet_root, f"{{{NS_MAIN}}}drawing", {f"{{{NS_REL}}}id": new_rid})
+                changed = True
+
+            files[new_sheet_part] = ET.tostring(new_sheet_root, encoding="utf-8", xml_declaration=True)
+            files[new_sheet_rels_path] = ET.tostring(new_sheet_rels, encoding="utf-8", xml_declaration=True)
+
+        merge_content_types(old_zf, files, copied_parts)
+
+    if changed:
+        with zipfile.ZipFile(xlsx_path, "w", compression=zipfile.ZIP_DEFLATED) as out_zf:
+            for name, data in files.items():
+                out_zf.writestr(name, data)
+
+
+def read_rels_from_bytes(data: bytes | None) -> ET.Element:
+    if data:
+        return ET.fromstring(data)
+    return ET.Element(f"{{{NS_PACKAGE_REL}}}Relationships")
+
+
+def copy_related_drawing_parts(old_zf: zipfile.ZipFile, files: dict[str, bytes], drawing_part: str, copied_parts: set[str]) -> None:
+    if drawing_part not in files:
+        files[drawing_part] = old_zf.read(drawing_part)
+    copied_parts.add(drawing_part)
+    drawing_rels_path = rels_path_for_part(drawing_part)
+    if drawing_rels_path not in old_zf.namelist():
+        return
+    if drawing_rels_path not in files:
+        files[drawing_rels_path] = old_zf.read(drawing_rels_path)
+    copied_parts.add(drawing_rels_path)
+    drawing_rels = ET.fromstring(old_zf.read(drawing_rels_path))
+    for rel in drawing_rels.findall(f"{{{NS_PACKAGE_REL}}}Relationship"):
+        target = rel.attrib.get("Target", "")
+        if not target or target.startswith("http://") or target.startswith("https://"):
+            continue
+        target_part = resolve_part_target(drawing_part, target)
+        if target_part in old_zf.namelist() and target_part not in files:
+            files[target_part] = old_zf.read(target_part)
+            copied_parts.add(target_part)
+
+
 def read_shared_strings(zf: zipfile.ZipFile) -> list[str]:
     try:
         root = ET.fromstring(zf.read("xl/sharedStrings.xml"))
@@ -784,8 +958,75 @@ def read_xlsx_first_sheet(path: Path) -> list[dict[str, str]]:
     return next(iter(sheets.values()), [])
 
 
+def xlsx_row_fields(source: dict[str, str]) -> dict[str, str]:
+    ignored = set(REVIEW_SHEET_COLUMNS + MANAGEMENT_COLUMNS + ["record_status", "review_status", "review_comment"])
+    return {key: value for key, value in source.items() if key and key not in ignored}
+
+
+def severity_by_tag_from_workbook(workbook_rows: dict[str, list[dict[str, str]]]) -> dict[str, str]:
+    severity_by_tag: dict[str, str] = {}
+    for row in workbook_rows.get("Tree Summary", []):
+        tag = norm(row.get("Tag"))
+        if tag:
+            severity_by_tag[tag] = norm(row.get("Severity"))
+    return severity_by_tag
+
+
+def row_from_xlsx_issue(source: dict[str, str], severity_by_tag: dict[str, str] | None = None) -> dict[str, str]:
+    fields = xlsx_row_fields(source)
+    wid = source.get("issue_id") or issue_id(fields)
+    object_value = ""
+    for key in OBJECT_FIELDS:
+        if norm(fields.get(key)):
+            object_value = norm(fields.get(key))
+            break
+    review_status = norm(source.get("Judgment") or source.get("review_status") or "UNREVIEWED")
+    return {
+        "issue_id": wid,
+        "record_status": norm(source.get("record_status")) or "ACTIVE",
+        "review_status": review_status,
+        "waiver_enabled": "yes" if review_status.upper() in {"WAIVED", "APPROVED", "APPROVED_WAIVE"} else "no",
+        "waiver_name": norm(source.get("waiver_name")),
+        "review_comment": norm(source.get("Comment") or source.get("review_comment")),
+        "owner": "",
+        "review_date": "",
+        "tag": norm(fields.get("Tag")),
+        "severity": norm((severity_by_tag or {}).get(norm(fields.get("Tag")), "")),
+        "goal": norm(fields.get("Goal")),
+        "module": norm(fields.get("Module")),
+        "file": norm(fields.get("FileName")),
+        "line": norm(fields.get("LineNumber")),
+        "hierarchy": norm(fields.get("HIERARCHY") or fields.get("DesignObjHierarchy")),
+        "object": object_value,
+        "statement": norm(fields.get("Statement")),
+        "description": norm(fields.get("Description")),
+        "violation": norm(fields.get("Violation")),
+        "source_report": "full",
+        "waiver_user": "",
+        "waiver_timestamp": "",
+        "filter_json": json.dumps(fields_for_filter(fields), ensure_ascii=False),
+        "fields_json": json.dumps(fields, ensure_ascii=False),
+    }
+
+
+def collect_current_rows_from_report_excel(report_excel: Path) -> list[dict[str, str]]:
+    workbook_rows = read_xlsx_sheets(report_excel)
+    severity_by_tag = severity_by_tag_from_workbook(workbook_rows)
+    rows_by_id: dict[str, dict[str, str]] = {}
+    for sheet_name, sheet_rows in workbook_rows.items():
+        if sheet_name in {"Tree Summary", "Instructions", "Summary", "ReviewDB"}:
+            continue
+        for source in sheet_rows:
+            if not source.get("Tag"):
+                continue
+            row = row_from_xlsx_issue(source, severity_by_tag)
+            rows_by_id[row["issue_id"]] = row
+    return sorted(rows_by_id.values(), key=lambda r: (r["tag"], r["module"], r["file"], int(r["line"] or 0)))
+
+
 def read_review_workbook(path: Path) -> list[dict[str, str]]:
     workbook_rows = read_xlsx_sheets(path)
+    severity_by_tag = severity_by_tag_from_workbook(workbook_rows)
     imported: list[dict[str, str]] = []
     for sheet_name, sheet_rows in workbook_rows.items():
         if sheet_name in {"Tree Summary", "Instructions", "Summary", "ReviewDB"}:
@@ -793,7 +1034,10 @@ def read_review_workbook(path: Path) -> list[dict[str, str]]:
                 imported.extend(sheet_rows)
             continue
         for source in sheet_rows:
+            if not source.get("Tag") and not source.get("issue_id"):
+                continue
             if not source.get("issue_id"):
+                imported.append(row_from_xlsx_issue(source, severity_by_tag))
                 continue
             try:
                 fields = json.loads(source.get("fields_json", "{}") or "{}")
@@ -889,6 +1133,93 @@ def row_to_tag_sheet(row: dict[str, str], columns: list[str], index: int) -> lis
     return [values.get(col, "") for col in columns]
 
 
+def workbook_headers(path: Path) -> OrderedDict[str, list[str]]:
+    headers: OrderedDict[str, list[str]] = OrderedDict()
+    if not path.exists():
+        return headers
+    sheets = read_xlsx_sheets(path)
+    for sheet_name, rows in sheets.items():
+        if rows:
+            headers[sheet_name] = list(rows[0].keys())
+    return headers
+
+
+def issue_id_from_workbook_source(source: dict[str, str]) -> str:
+    if source.get("issue_id"):
+        return source["issue_id"]
+    return issue_id(xlsx_row_fields(source))
+
+
+def collect_user_extra_columns(previous_excel: Path | None, report_headers: dict[str, list[str]]) -> tuple[dict[str, list[str]], dict[str, dict[str, str]]]:
+    extras_by_sheet: dict[str, list[str]] = {}
+    values_by_issue: dict[str, dict[str, str]] = {}
+    if not previous_excel or not previous_excel.exists():
+        return extras_by_sheet, values_by_issue
+
+    old_sheets = read_xlsx_sheets(previous_excel)
+    ignored = set(MANAGEMENT_COLUMNS + ["record_status", "review_status", "review_comment"])
+    for sheet_name, rows in old_sheets.items():
+        if sheet_name in {"Tree Summary", "Instructions", "Summary", "ReviewDB"} or not rows:
+            continue
+        report_cols = set(report_headers.get(sheet_name, []))
+        extras = [col for col in rows[0].keys() if col not in report_cols and col not in ignored]
+        if extras:
+            extras_by_sheet[sheet_name] = extras
+        for source in rows:
+            try:
+                wid = issue_id_from_workbook_source(source)
+            except Exception:
+                continue
+            values_by_issue[wid] = {col: source.get(col, "") for col in extras}
+    return extras_by_sheet, values_by_issue
+
+
+def report_ordered_sheet_columns(
+    tag: str,
+    tag_rows: list[dict[str, str]],
+    report_headers: dict[str, list[str]],
+    extras_by_sheet: dict[str, list[str]],
+) -> list[str]:
+    columns = list(report_headers.get(tag, []))
+    if not columns:
+        columns = tag_sheet_columns(tag_rows)
+    if "record_status" not in columns:
+        insert_at = columns.index("Comment") + 1 if "Comment" in columns else len(columns)
+        columns.insert(insert_at, "record_status")
+    for extra in extras_by_sheet.get(tag, []):
+        if extra not in columns:
+            columns.append(extra)
+    return columns
+
+
+def row_to_report_sheet(row: dict[str, str], columns: list[str], index: int, user_extra_values: dict[str, dict[str, str]]) -> list[str]:
+    try:
+        fields = json.loads(row.get("fields_json", "{}") or "{}")
+    except json.JSONDecodeError:
+        fields = {}
+    if not isinstance(fields, dict):
+        fields = {}
+    values = {
+        "No.": str(index),
+        "Person in Charge": "",
+        "Date": "",
+        "Judgment": row.get("review_status", ""),
+        "Comment": row.get("review_comment", ""),
+        "record_status": row.get("record_status", ""),
+        "Tag": row.get("tag", ""),
+        "Description": row.get("description", ""),
+        "Violation": row.get("violation", ""),
+        "Goal": row.get("goal", ""),
+        "Module": row.get("module", ""),
+        "FileName": row.get("file", ""),
+        "LineNumber": row.get("line", ""),
+        "Statement": row.get("statement", ""),
+    }
+    values.update({key: str(value) for key, value in fields.items()})
+    values.update(user_extra_values.get(row.get("issue_id", ""), {}))
+    return [values.get(col, "") for col in columns]
+
+
 def tree_summary_matrix(rows: list[dict[str, str]]) -> list[list[str]]:
     header = ["Severity", "Stage", "Tag", "Count", "Waived", "Compressed", "Confirmed", "Remaining"]
     active = [row for row in rows if row.get("record_status") != "REMOVED"]
@@ -909,11 +1240,13 @@ def tree_summary_matrix(rows: list[dict[str, str]]) -> list[list[str]]:
     return matrix
 
 
-def export_excel(csv_path: Path, xlsx_path: Path, summary_path: Path | None = None) -> None:
+def export_excel(csv_path: Path, xlsx_path: Path, summary_path: Path | None = None, report_excel: Path | None = None, previous_excel: Path | None = None) -> None:
     rows = read_csv(csv_path)
     summary_rows = summarize(rows)
     sheets: OrderedDict[str, list[list[object]]] = OrderedDict()
     sheets["Tree Summary"] = tree_summary_matrix(rows)
+    report_headers = workbook_headers(report_excel) if report_excel else OrderedDict()
+    extras_by_sheet, user_extra_values = collect_user_extra_columns(previous_excel, report_headers)
 
     by_tag: OrderedDict[str, list[dict[str, str]]] = OrderedDict()
     for row in rows:
@@ -921,8 +1254,8 @@ def export_excel(csv_path: Path, xlsx_path: Path, summary_path: Path | None = No
             continue
         by_tag.setdefault(row.get("tag", "UNKNOWN") or "UNKNOWN", []).append(row)
     for tag, tag_rows in by_tag.items():
-        columns = tag_sheet_columns(tag_rows)
-        sheets[tag] = [columns] + [row_to_tag_sheet(row, columns, idx) for idx, row in enumerate(tag_rows, start=1)]
+        columns = report_ordered_sheet_columns(tag, tag_rows, report_headers, extras_by_sheet)
+        sheets[tag] = [columns] + [row_to_report_sheet(row, columns, idx, user_extra_values) for idx, row in enumerate(tag_rows, start=1)]
 
     removed_rows = [row for row in rows if row.get("record_status") == "REMOVED"]
     if removed_rows:
@@ -931,12 +1264,13 @@ def export_excel(csv_path: Path, xlsx_path: Path, summary_path: Path | None = No
 
     sheets["Instructions"] = [
         ["Sanity LINT Review Workbook"],
-        ["This workbook follows the report_lint.full.xlsx style: Tree Summary plus one worksheet per tag."],
-        ["Reviewer-editable columns are Person in Charge, Date, Judgment, Comment, waiver_enabled, waiver_name, and filter_json."],
-        ["Use '*' or '?' in filter_json values to generate Tcl '=~' wildcard filters."],
+        ["Run make -f Makefile excel to generate report_lint.full.xlsx, then this workbook is merged from it."],
+        ["Reviewer-editable report columns are Judgment and Comment."],
+        ["User-added columns are preserved for human notes but ignored by vc_waiver.tcl generation."],
         ["Git should review LINT/data/lint_review_db.csv, not this binary Excel workbook."],
     ]
     write_xlsx(xlsx_path, sheets)
+    preserve_workbook_drawings(previous_excel, xlsx_path)
     if summary_path:
         write_csv(summary_path, summary_rows, ["record_status", "review_status", "tag", "count"])
 
@@ -952,7 +1286,6 @@ def generate_waiver(csv_path: Path, output_path: Path, user: str = "") -> None:
         row
         for row in rows
         if row.get("record_status") != "REMOVED"
-        and row.get("waiver_enabled", "").strip().lower() in {"yes", "y", "true", "1"}
         and row.get("review_status", "").strip().upper() in {"WAIVED", "APPROVED", "APPROVED_WAIVE"}
     ]
     duplicate_waiver_names = {
@@ -1012,6 +1345,25 @@ def update_review_from_reports(args: argparse.Namespace) -> list[dict[str, str]]
     return rows
 
 
+def update_review_from_report_excel(args: argparse.Namespace, previous_excel: Path | None = None) -> list[dict[str, str]]:
+    rows = collect_current_rows_from_report_excel(args.report_excel)
+    old_db = args.old_db or args.review_db
+    if old_db and old_db.exists():
+        rows = merge_rows(read_csv(old_db), rows)
+    write_csv(args.review_db, rows)
+    export_excel(args.review_db, args.excel, args.summary, report_excel=args.report_excel, previous_excel=previous_excel)
+    if args.waiver_tcl and args.waiver_audit:
+        audit_waiver_rules(args.waiver_tcl, rows, args.waiver_audit)
+    print(f"review rows : {len(rows)}")
+    print(f"report excel: {args.report_excel}")
+    print(f"review db   : {args.review_db}")
+    print(f"excel       : {args.excel}")
+    print(f"summary     : {args.summary}")
+    if args.waiver_tcl and args.waiver_audit:
+        print(f"waiver audit: {args.waiver_audit}")
+    return rows
+
+
 def cmd_bootstrap(args: argparse.Namespace) -> None:
     rows = collect_current_rows(args.full_report, args.waived_report, args.waiver_tcl)
     if args.old_db and args.old_db.exists():
@@ -1032,6 +1384,23 @@ def cmd_bootstrap(args: argparse.Namespace) -> None:
 
 def cmd_update_review(args: argparse.Namespace) -> None:
     update_review_from_reports(args)
+
+
+def cmd_update_review_excel(args: argparse.Namespace) -> None:
+    update_review_from_report_excel(args, previous_excel=args.excel if args.excel.exists() else None)
+
+
+def cmd_prepare_waiver(args: argparse.Namespace) -> None:
+    rows = import_excel_to_db(args.excel, args.review_db)
+    generate_waiver(args.review_db, args.output, args.user)
+    print(f"imported {len(rows)} rows from {args.excel}")
+    print(f"wrote {args.output}")
+    print("Next: run the sanity tool to refresh reports/report_lint.full.log.")
+
+
+def cmd_merge_report(args: argparse.Namespace) -> None:
+    run_make_excel(Path(__file__).resolve().parent)
+    update_review_from_report_excel(args, previous_excel=args.excel if args.excel.exists() else None)
 
 
 def cmd_parse(args: argparse.Namespace) -> None:
@@ -1089,7 +1458,7 @@ def cmd_clean(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Manage LINT sanity review with CSV/Excel/waiver Tcl.",
-        epilog="Run without arguments from the LINT directory to import Excel edits, generate vc_waiver.tcl, then update review DB/Excel from reports.",
+        epilog="Use prepare-waiver first, run the sanity tool, then use merge-report.",
     )
     sub = parser.add_subparsers()
 
@@ -1098,8 +1467,25 @@ def build_parser() -> argparse.ArgumentParser:
     common_reports.add_argument("--waived-report", type=Path)
     common_reports.add_argument("--waiver-tcl", type=Path)
 
-    p = sub.add_parser("run_all", help="Run the default LINT flow without path options.")
+    p = sub.add_parser("run_all", help="Print the two-command review sequence without changing files.")
     p.set_defaults(func=lambda _args: run_all(Path(__file__).resolve().parent))
+
+    p = sub.add_parser("prepare-waiver", help="Import lint_review.xlsx and generate vc_waiver.tcl only.")
+    p.add_argument("--excel", type=Path, default=Path("outputs/lint_review.xlsx"))
+    p.add_argument("--review-db", type=Path, default=Path("data/lint_review_db.csv"))
+    p.add_argument("--output", type=Path, default=Path("vc_waiver.tcl"))
+    p.add_argument("--user", default="")
+    p.set_defaults(func=cmd_prepare_waiver)
+
+    p = sub.add_parser("merge-report", help="Run make -f Makefile excel, then merge report_lint.full.xlsx into lint_review.xlsx.")
+    p.add_argument("--report-excel", type=Path, default=Path("report_lint.full.xlsx"))
+    p.add_argument("--old-db", type=Path)
+    p.add_argument("--review-db", type=Path, default=Path("data/lint_review_db.csv"))
+    p.add_argument("--excel", type=Path, default=Path("outputs/lint_review.xlsx"))
+    p.add_argument("--summary", type=Path, default=Path("outputs/lint_summary.csv"))
+    p.add_argument("--waiver-tcl", type=Path, default=Path("vc_waiver.tcl"))
+    p.add_argument("--waiver-audit", type=Path, default=Path("outputs/waiver_rule_audit.csv"))
+    p.set_defaults(func=cmd_merge_report)
 
     p = sub.add_parser("update-review", parents=[common_reports], help="Merge current reports into the review DB and export reviewer Excel.")
     p.add_argument("--old-db", type=Path)
@@ -1108,6 +1494,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--summary", type=Path, default=Path("outputs/lint_summary.csv"))
     p.add_argument("--waiver-audit", type=Path, default=Path("outputs/waiver_rule_audit.csv"))
     p.set_defaults(func=cmd_update_review)
+
+    p = sub.add_parser("update-review-excel", help="Merge report_lint.full.xlsx into lint_review.xlsx.")
+    p.add_argument("--report-excel", type=Path, default=Path("report_lint.full.xlsx"))
+    p.add_argument("--old-db", type=Path)
+    p.add_argument("--review-db", type=Path, default=Path("data/lint_review_db.csv"))
+    p.add_argument("--excel", type=Path, default=Path("outputs/lint_review.xlsx"))
+    p.add_argument("--summary", type=Path, default=Path("outputs/lint_summary.csv"))
+    p.add_argument("--waiver-tcl", type=Path, default=Path("vc_waiver.tcl"))
+    p.add_argument("--waiver-audit", type=Path, default=Path("outputs/waiver_rule_audit.csv"))
+    p.set_defaults(func=cmd_update_review_excel)
 
     p = sub.add_parser("bootstrap", parents=[common_reports], help="Create sample review DB, Excel workbook, summary, and generated waiver Tcl.")
     p.add_argument("--old-db", type=Path)

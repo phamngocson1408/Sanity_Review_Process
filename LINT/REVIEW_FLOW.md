@@ -6,6 +6,8 @@ This document describes the intended review loop for LINT sanity issues and waiv
 
 `lint_review.xlsx` is the reviewer UI.
 
+`report_lint.full.xlsx` is the tool-generated LINT report.
+
 `data/lint_review_db.csv` is the Git-friendly source of truth that keeps review memory across sanity runs.
 
 `vc_waiver.tcl` is generated from approved/waived items in the review DB and is used by the next sanity check run.
@@ -16,7 +18,7 @@ This document describes the intended review loop for LINT sanity issues and waiv
 LINT/
   reports/
     report_lint.full.log
-    report_lint.waived.log
+  report_lint.full.xlsx
   data/
     lint_review_db.csv
   outputs/
@@ -31,19 +33,14 @@ LINT/
 
 1. Run the sanity check script.
 
-The sanity tool creates report files under `reports/`.
+The sanity tool creates or refreshes the report log under `reports/`.
 
-```text
-reports/report_lint.full.log
-reports/report_lint.waived.log
-```
-
-2. Run the review bridge.
+2. Generate the waiver file from the reviewer workbook.
 
 From the `LINT` directory:
 
 ```powershell
-python sanity_lint_review.py
+python sanity_lint_review.py prepare-waiver
 ```
 
 The script does the following:
@@ -52,41 +49,49 @@ The script does the following:
 existing outputs/lint_review.xlsx, if any
   -> import reviewer edits into data/lint_review_db.csv
   -> generate vc_waiver.tcl
+```
 
-current reports/*.log
+3. Run the sanity tool again.
+
+This step must happen after `vc_waiver.tcl` is generated, so the next report reflects the user's latest waiver decisions.
+
+4. Merge the refreshed sanity report into the review workbook.
+
+From the `LINT` directory:
+
+```powershell
+python sanity_lint_review.py merge-report
+```
+
+The script does the following:
+
+```text
+make -f Makefile excel
+  -> generate report_lint.full.xlsx from the refreshed reports
+
+report_lint.full.xlsx
   -> parse current issues
   -> merge with data/lint_review_db.csv
   -> export outputs/lint_review.xlsx
 ```
 
-3. Reviewer edits `outputs/lint_review.xlsx`.
+5. Reviewer edits `outputs/lint_review.xlsx`.
 
-The reviewer can update these columns:
+The reviewer can update these report columns:
 
 ```text
-Person in Charge
-Date
 Judgment
 Comment
-waiver_enabled
-waiver_name
-filter_json
 ```
 
-The reviewer may also add images/comments for human review. The script preserves structured cell data, but embedded images are not used for waiver generation.
+The reviewer may also add new columns for human notes. Those columns are preserved in `lint_review.xlsx`, but ignored by `vc_waiver.tcl` generation.
 
-4. Generate the next waiver file.
+6. Generate the next waiver file.
 
 Run:
 
 ```powershell
-python sanity_lint_review.py
-```
-
-or explicitly:
-
-```powershell
-python sanity_lint_review.py generate-waiver-from-excel
+python sanity_lint_review.py prepare-waiver
 ```
 
 This imports reviewer edits from `outputs/lint_review.xlsx` into `data/lint_review_db.csv`, then generates:
@@ -95,14 +100,14 @@ This imports reviewer edits from `outputs/lint_review.xlsx` into `data/lint_revi
 vc_waiver.tcl
 ```
 
-5. Run sanity check again with the new `vc_waiver.tcl`.
+7. Run sanity check again with the new `vc_waiver.tcl`.
 
 The sanity tool creates new reports.
 
-6. Run the review bridge again.
+8. Merge the refreshed report again.
 
 ```powershell
-python sanity_lint_review.py
+python sanity_lint_review.py merge-report
 ```
 
 The script merges the new reports with the previous review DB, so old comments/status are preserved.
@@ -130,7 +135,7 @@ REMOVED
   The issue existed in the previous review DB but no longer appears in the latest reports.
 ```
 
-`review_status` is the reviewer decision.
+`review_status` is imported from the Excel `Judgment` column.
 
 ```text
 UNREVIEWED
@@ -180,14 +185,7 @@ Reviewer fields preserved during merge:
 
 ```text
 review_status
-waiver_enabled
-waiver_name
 review_comment
-owner
-review_date
-filter_json
-waiver_user
-waiver_timestamp
 ```
 
 ## Waiver Generation
@@ -196,8 +194,7 @@ The script generates `vc_waiver.tcl` from rows where:
 
 ```text
 record_status != REMOVED
-waiver_enabled == yes
-review_status in WAIVED / APPROVED / APPROVED_WAIVE
+Judgment in WAIVED / APPROVED / APPROVED_WAIVE
 ```
 
 The generated Tcl follows the GUI-style waiver file:
@@ -220,9 +217,9 @@ generates:
 waive_violation -add {DeadCode-ML_739} ...
 ```
 
-The script does not collapse multiple waived issues that share the same `Waiver Name` in `report_lint.waived.log`, because the GUI-style `vc_waiver.tcl` keeps issue-level waiver commands.
+The script does not collapse multiple waived issues that share the same generated waiver name, because the GUI-style `vc_waiver.tcl` keeps issue-level waiver commands.
 
-`filter_json` controls the generated Tcl `-filter`.
+The script derives Tcl `-filter` fields from the report-owned columns. User-added columns are not used.
 
 Exact match:
 
