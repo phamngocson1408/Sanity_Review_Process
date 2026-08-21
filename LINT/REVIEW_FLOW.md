@@ -36,7 +36,7 @@ The sanity tool creates or refreshes the report log under `reports/`.
 From the `LINT` directory:
 
 ```powershell
-python sanity_lint_review.py prepare-waiver
+python sanity_lint_review.py gen_waiver
 ```
 
 The script does the following:
@@ -55,7 +55,7 @@ This step must happen after `vc_waiver.tcl` is generated, so the next report ref
 From the `LINT` directory:
 
 ```powershell
-python sanity_lint_review.py merge-report
+python sanity_lint_review.py merge_excel
 ```
 
 The script does the following:
@@ -88,7 +88,7 @@ The reviewer may also add new columns for human notes. Those columns are preserv
 Run:
 
 ```powershell
-python sanity_lint_review.py prepare-waiver
+python sanity_lint_review.py gen_waiver
 ```
 
 This reads reviewer edits from `outputs/lint_review.xlsx`, then generates:
@@ -104,7 +104,7 @@ The sanity tool creates new reports.
 8. Merge the refreshed report again.
 
 ```powershell
-python sanity_lint_review.py merge-report
+python sanity_lint_review.py merge_excel
 ```
 
 The script merges the new reports with the previous `lint_review.xlsx`, so old comments/status are preserved.

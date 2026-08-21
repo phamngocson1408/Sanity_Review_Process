@@ -151,9 +151,9 @@ def default_paths(base_dir: Path) -> argparse.Namespace:
 def run_all(base_dir: Path) -> None:
     print("The review flow is split into two explicit commands:")
     print("")
-    print("  1) python sanity_lint_review.py prepare-waiver")
+    print("  1) python sanity_lint_review.py gen_waiver")
     print("  2) Run the sanity tool so reports/report_lint.full.log is updated")
-    print("  3) python sanity_lint_review.py merge-report")
+    print("  3) python sanity_lint_review.py merge_excel")
     print("")
     print("No files were changed.")
 
@@ -1442,7 +1442,7 @@ def cmd_update_review_excel(args: argparse.Namespace) -> None:
     update_review_from_report_excel(args, previous_excel=args.excel if args.excel.exists() else None)
 
 
-def cmd_prepare_waiver(args: argparse.Namespace) -> None:
+def cmd_gen_waiver(args: argparse.Namespace) -> None:
     rows = read_review_workbook(args.excel)
     generate_waiver_from_rows(rows, args.output, args.user)
     print(f"read {len(rows)} rows from {args.excel}")
@@ -1450,7 +1450,7 @@ def cmd_prepare_waiver(args: argparse.Namespace) -> None:
     print("Next: run the sanity tool to refresh reports/report_lint.full.log.")
 
 
-def cmd_merge_report(args: argparse.Namespace) -> None:
+def cmd_merge_excel(args: argparse.Namespace) -> None:
     run_make_excel(Path(__file__).resolve().parent)
     update_review_from_report_excel(args, previous_excel=args.excel if args.excel.exists() else None)
 
@@ -1510,26 +1510,26 @@ def cmd_clean(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Manage LINT sanity review with lint_review.xlsx and waiver Tcl.",
-        epilog="Use prepare-waiver first, run the sanity tool, then use merge-report.",
+        epilog="Use gen_waiver first, run the sanity tool, then use merge_excel.",
     )
     sub = parser.add_subparsers()
 
     p = sub.add_parser("run_all", help="Print the two-command review sequence without changing files.")
     p.set_defaults(func=lambda _args: run_all(Path(__file__).resolve().parent))
 
-    p = sub.add_parser("prepare-waiver", help="Import lint_review.xlsx and generate vc_waiver.tcl only.")
+    p = sub.add_parser("gen_waiver", help="Import lint_review.xlsx and generate vc_waiver.tcl only.")
     p.add_argument("--excel", type=Path, default=Path("outputs/lint_review.xlsx"))
     p.add_argument("--output", type=Path, default=Path("vc_waiver.tcl"))
     p.add_argument("--user", default="")
-    p.set_defaults(func=cmd_prepare_waiver)
+    p.set_defaults(func=cmd_gen_waiver)
 
-    p = sub.add_parser("merge-report", help="Run make -f Makefile excel, then merge report_lint.full.xlsx into lint_review.xlsx.")
+    p = sub.add_parser("merge_excel", help="Run make -f Makefile excel, then merge report_lint.full.xlsx into lint_review.xlsx.")
     p.add_argument("--report-excel", type=Path, default=Path("report_lint.full.xlsx"))
     p.add_argument("--excel", type=Path, default=Path("outputs/lint_review.xlsx"))
     p.add_argument("--summary", type=Path, default=Path("outputs/lint_summary.csv"))
     p.add_argument("--waiver-tcl", type=Path, default=Path("vc_waiver.tcl"))
     p.add_argument("--waiver-audit", type=Path, default=Path("outputs/waiver_rule_audit.csv"))
-    p.set_defaults(func=cmd_merge_report)
+    p.set_defaults(func=cmd_merge_excel)
 
     p = sub.add_parser("update-review-excel", help="Merge report_lint.full.xlsx into lint_review.xlsx.")
     p.add_argument("--report-excel", type=Path, default=Path("report_lint.full.xlsx"))

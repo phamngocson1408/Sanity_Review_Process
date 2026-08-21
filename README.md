@@ -54,7 +54,7 @@ Run this from the `LINT` directory:
 
 ```powershell
 cd LINT
-python sanity_lint_review.py prepare-waiver
+python sanity_lint_review.py gen_waiver
 ```
 
 This imports existing Excel edits and generates `vc_waiver.tcl`.
@@ -64,7 +64,7 @@ Then run the sanity tool so `reports/report_lint.full.log` is refreshed with the
 After the sanity tool finishes, run:
 
 ```powershell
-python sanity_lint_review.py merge-report
+python sanity_lint_review.py merge_excel
 ```
 
 This runs `make -f Makefile excel`, merges the refreshed `report_lint.full.xlsx` into `outputs/lint_review.xlsx`, and marks issue state as `NEW` / `CHANGED` / `ACTIVE` / `REMOVED`.
@@ -82,7 +82,7 @@ Running `python sanity_lint_review.py` without arguments prints the two-command 
 1. Generate waiver Tcl from reviewer decisions:
 
 ```bash
-python sanity_lint_review.py prepare-waiver
+python sanity_lint_review.py gen_waiver
 ```
 
 2. Run the sanity tool so the reports are regenerated with the new `vc_waiver.tcl`.
@@ -90,7 +90,7 @@ python sanity_lint_review.py prepare-waiver
 3. Convert and merge the refreshed report workbook:
 
 ```bash
-python sanity_lint_review.py merge-report
+python sanity_lint_review.py merge_excel
 ```
 
 4. Reviewer edits `Judgment` or `Comment` in `outputs/lint_review.xlsx`.
