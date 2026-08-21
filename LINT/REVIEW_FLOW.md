@@ -79,6 +79,8 @@ Judgment
 Comment
 ```
 
+Green headers are user-editable. Gray headers are report-owned and should not be edited. Each sheet has filters enabled, and `Judgment` has a dropdown for supported review decisions.
+
 The reviewer may also add new columns for human notes. Those columns are preserved in `lint_review.xlsx`, but ignored by `vc_waiver.tcl` generation.
 
 6. Generate the next waiver file.

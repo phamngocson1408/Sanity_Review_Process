@@ -626,9 +626,10 @@ def safe_sheet_name(name: str, used: set[str]) -> str:
     return candidate
 
 
-def sheet_xml(rows: list[list[object]]) -> str:
+def sheet_xml(rows: list[list[object]], editable_headers: set[str] | None = None) -> str:
     if not rows:
         rows = [[""]]
+    editable_headers = editable_headers or set()
     col_count = max(len(row) for row in rows)
     row_count = len(rows)
     out = [
@@ -659,14 +660,31 @@ def sheet_xml(rows: list[list[object]]) -> str:
         for c_idx, value in enumerate(row):
             cell_ref = f"{xlsx_col_name(c_idx)}{r_idx}"
             text = "" if value is None else str(value)
-            out.append(f'<c r="{cell_ref}" t="inlineStr"><is><t xml:space="preserve">{html.escape(text)}</t></is></c>')
+            style = ""
+            if r_idx == 1:
+                style_id = 1 if text in editable_headers else 2
+                style = f' s="{style_id}"'
+            out.append(f'<c r="{cell_ref}"{style} t="inlineStr"><is><t xml:space="preserve">{html.escape(text)}</t></is></c>')
         out.append("</row>")
-    out.extend(["</sheetData>", '<autoFilter ref="A1:{}{}"/>'.format(xlsx_col_name(col_count - 1), row_count), "</worksheet>"])
+    out.extend(["</sheetData>", '<autoFilter ref="A1:{}{}"/>'.format(xlsx_col_name(col_count - 1), row_count)])
+    header = ["" if value is None else str(value) for value in rows[0]]
+    if "Judgment" in header and row_count > 1:
+        judgment_col = xlsx_col_name(header.index("Judgment"))
+        validation_range = f"{judgment_col}2:{judgment_col}{row_count}"
+        out.append(
+            '<dataValidations count="1">'
+            f'<dataValidation type="list" allowBlank="1" showDropDown="0" sqref="{validation_range}">'
+            '<formula1>"UNREVIEWED,WAIVED,APPROVED,APPROVED_WAIVE"</formula1>'
+            "</dataValidation>"
+            "</dataValidations>"
+        )
+    out.append("</worksheet>")
     return "".join(out)
 
 
-def write_xlsx(path: Path, sheets: dict[str, list[list[object]]]) -> None:
+def write_xlsx(path: Path, sheets: dict[str, list[list[object]]], editable_headers_by_sheet: dict[str, set[str]] | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    editable_headers_by_sheet = editable_headers_by_sheet or {}
     sheet_items = list(sheets.items())
     content_types = [
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
@@ -689,21 +707,51 @@ def write_xlsx(path: Path, sheets: dict[str, list[list[object]]]) -> None:
         f'<Relationships xmlns="{NS_PACKAGE_REL}">',
     ]
     used_names: set[str] = set()
+    safe_sheet_names: list[str] = []
     for idx, (name, _rows) in enumerate(sheet_items, start=1):
-        safe_name = html.escape(safe_sheet_name(name, used_names))
+        safe_name_raw = safe_sheet_name(name, used_names)
+        safe_sheet_names.append(safe_name_raw)
+        safe_name = html.escape(safe_name_raw)
         workbook_sheets.append(f'<sheet name="{safe_name}" sheetId="{idx}" r:id="rId{idx}"/>')
         rels.append(f'<Relationship Id="rId{idx}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet{idx}.xml"/>')
-    workbook_sheets.append("</sheets></workbook>")
+    workbook_sheets.append("</sheets>")
+    defined_names: list[str] = []
+    for idx, (safe_name, (_name, rows)) in enumerate(zip(safe_sheet_names, sheet_items)):
+        if not rows:
+            continue
+        row_count = len(rows)
+        col_count = max(len(row) for row in rows)
+        quoted_name = safe_name.replace("'", "''")
+        filter_ref = f"'{quoted_name}'!$A$1:${xlsx_col_name(col_count - 1)}${row_count}"
+        defined_names.append(f'<definedName name="_xlnm._FilterDatabase" localSheetId="{idx}" hidden="1">{html.escape(filter_ref)}</definedName>')
+    if defined_names:
+        workbook_sheets.append("<definedNames>")
+        workbook_sheets.extend(defined_names)
+        workbook_sheets.append("</definedNames>")
+    workbook_sheets.append("</workbook>")
     rels.append(f'<Relationship Id="rId{len(sheet_items)+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>')
     rels.append("</Relationships>")
 
     styles = (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-        f'<styleSheet xmlns="{NS_MAIN}"><fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>'
-        '<fills count="1"><fill><patternFill patternType="none"/></fill></fills>'
+        f'<styleSheet xmlns="{NS_MAIN}">'
+        '<fonts count="2">'
+        '<font><sz val="11"/><name val="Calibri"/></font>'
+        '<font><b/><sz val="11"/><name val="Calibri"/></font>'
+        '</fonts>'
+        '<fills count="4">'
+        '<fill><patternFill patternType="none"/></fill>'
+        '<fill><patternFill patternType="gray125"/></fill>'
+        '<fill><patternFill patternType="solid"><fgColor rgb="FFC6EFCE"/><bgColor indexed="64"/></patternFill></fill>'
+        '<fill><patternFill patternType="solid"><fgColor rgb="FFD9D9D9"/><bgColor indexed="64"/></patternFill></fill>'
+        '</fills>'
         '<borders count="1"><border/></borders>'
         '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-        '<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>'
+        '<cellXfs count="3">'
+        '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+        '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'
+        '<xf numFmtId="0" fontId="1" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'
+        '</cellXfs>'
         '</styleSheet>'
     )
 
@@ -721,7 +769,7 @@ def write_xlsx(path: Path, sheets: dict[str, list[list[object]]]) -> None:
         zf.writestr("xl/_rels/workbook.xml.rels", "".join(rels))
         zf.writestr("xl/styles.xml", styles)
         for idx, (_name, rows) in enumerate(sheet_items, start=1):
-            zf.writestr(f"xl/worksheets/sheet{idx}.xml", sheet_xml(rows))
+            zf.writestr(f"xl/worksheets/sheet{idx}.xml", sheet_xml(rows, editable_headers_by_sheet.get(_name, set())))
 
 
 def xlsx_sheet_targets(zf: zipfile.ZipFile) -> OrderedDict[str, str]:
@@ -1241,6 +1289,7 @@ def tree_summary_matrix(rows: list[dict[str, str]]) -> list[list[str]]:
 def export_review_workbook(rows: list[dict[str, str]], xlsx_path: Path, summary_path: Path | None = None, report_excel: Path | None = None, previous_excel: Path | None = None) -> None:
     summary_rows = summarize(rows)
     sheets: OrderedDict[str, list[list[object]]] = OrderedDict()
+    editable_headers_by_sheet: dict[str, set[str]] = {}
     sheets["Tree Summary"] = tree_summary_matrix(rows)
     report_headers = workbook_headers(report_excel) if report_excel else OrderedDict()
     extras_by_sheet, user_extra_values = collect_user_extra_columns(previous_excel, report_headers)
@@ -1253,11 +1302,13 @@ def export_review_workbook(rows: list[dict[str, str]], xlsx_path: Path, summary_
     for tag, tag_rows in by_tag.items():
         columns = report_ordered_sheet_columns(tag, tag_rows, report_headers, extras_by_sheet)
         sheets[tag] = [columns] + [row_to_report_sheet(row, columns, idx, user_extra_values) for idx, row in enumerate(tag_rows, start=1)]
+        editable_headers_by_sheet[tag] = {"Judgment", "Comment", *extras_by_sheet.get(tag, [])}
 
     removed_rows = [row for row in rows if row.get("record_status") == "REMOVED"]
     if removed_rows:
         columns = tag_sheet_columns(removed_rows)
         sheets["Removed"] = [columns] + [row_to_tag_sheet(row, columns, idx) for idx, row in enumerate(removed_rows, start=1)]
+        editable_headers_by_sheet["Removed"] = {"Judgment", "Comment"}
 
     sheets["Instructions"] = [
         ["Sanity LINT Review Workbook"],
@@ -1266,7 +1317,7 @@ def export_review_workbook(rows: list[dict[str, str]], xlsx_path: Path, summary_
         ["User-added columns are preserved for human notes but ignored by vc_waiver.tcl generation."],
         ["This workbook is the review source of truth."],
     ]
-    write_xlsx(xlsx_path, sheets)
+    write_xlsx(xlsx_path, sheets, editable_headers_by_sheet)
     preserve_workbook_drawings(previous_excel, xlsx_path)
     if summary_path:
         write_csv(summary_path, summary_rows, ["record_status", "review_status", "tag", "count"])

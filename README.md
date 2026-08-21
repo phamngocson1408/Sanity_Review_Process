@@ -28,6 +28,9 @@ Each tag sheet follows `report_lint.full.xlsx`. The reviewer-editable report col
 Judgment, Comment
 ```
 
+Green headers are user-editable. Gray headers are report-owned and should not be edited.
+The `Judgment` column has a dropdown for the supported review decisions.
+
 User-added columns are preserved in `lint_review.xlsx` for human notes, but ignored when `vc_waiver.tcl` is generated.
 
 `vc_waiver.tcl` is generated in GUI-style: one `waive_violation` command per waived issue, with names based on the LINT violation number such as `DeadCode-ML_739`.
