@@ -4,13 +4,11 @@ This document describes the intended review loop for LINT sanity issues and waiv
 
 ## Main Idea
 
-`lint_review.xlsx` is the reviewer UI.
+`outputs/lint_review.xlsx` is the reviewer UI and the review source of truth.
 
 `report_lint.full.xlsx` is the tool-generated LINT report.
 
-`data/lint_review_db.csv` is the Git-friendly source of truth that keeps review memory across sanity runs.
-
-`vc_waiver.tcl` is generated from approved/waived items in the review DB and is used by the next sanity check run.
+`vc_waiver.tcl` is generated from approved/waived items in `lint_review.xlsx` and is used by the next sanity check run.
 
 ## Directory Layout
 
@@ -19,8 +17,6 @@ LINT/
   reports/
     report_lint.full.log
   report_lint.full.xlsx
-  data/
-    lint_review_db.csv
   outputs/
     lint_review.xlsx
     lint_summary.csv
@@ -47,7 +43,6 @@ The script does the following:
 
 ```text
 existing outputs/lint_review.xlsx, if any
-  -> import reviewer edits into data/lint_review_db.csv
   -> generate vc_waiver.tcl
 ```
 
@@ -71,7 +66,7 @@ make -f Makefile excel
 
 report_lint.full.xlsx
   -> parse current issues
-  -> merge with data/lint_review_db.csv
+  -> merge with outputs/lint_review.xlsx
   -> export outputs/lint_review.xlsx
 ```
 
@@ -94,7 +89,7 @@ Run:
 python sanity_lint_review.py prepare-waiver
 ```
 
-This imports reviewer edits from `outputs/lint_review.xlsx` into `data/lint_review_db.csv`, then generates:
+This reads reviewer edits from `outputs/lint_review.xlsx`, then generates:
 
 ```text
 vc_waiver.tcl
@@ -110,7 +105,7 @@ The sanity tool creates new reports.
 python sanity_lint_review.py merge-report
 ```
 
-The script merges the new reports with the previous review DB, so old comments/status are preserved.
+The script merges the new reports with the previous `lint_review.xlsx`, so old comments/status are preserved.
 
 ## Status Meaning
 
@@ -118,10 +113,10 @@ The script merges the new reports with the previous review DB, so old comments/s
 
 ```text
 NEW
-  The issue appears in the latest report and was not found in the previous review DB.
+  The issue appears in the latest report and was not found in the previous review workbook.
 
 ACTIVE
-  The issue appears in the latest full report and already existed in the review DB.
+  The issue appears in the latest full report and already existed in the review workbook.
 
 CHANGED
   The issue no longer has the same exact issue_id, but it still looks like the same logical issue.
@@ -132,7 +127,7 @@ WAIVED
   The issue appears in the latest waived report. This means the sanity tool recognized it as waived.
 
 REMOVED
-  The issue existed in the previous review DB but no longer appears in the latest reports.
+  The issue existed in the previous review workbook but no longer appears in the latest reports.
 ```
 
 `review_status` is imported from the Excel `Judgment` column.
@@ -163,7 +158,7 @@ Signal / VariableName / ModPortName
 Statement
 ```
 
-When reports are parsed again, the script compares new issues with the existing `data/lint_review_db.csv`.
+When reports are parsed again, the script compares new issues with the existing `outputs/lint_review.xlsx`.
 
 ```text
 same issue_id
