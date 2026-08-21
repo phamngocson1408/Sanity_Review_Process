@@ -2,15 +2,24 @@
 
 This repository contains a sample LINT review/waiver flow for Jira SDI-20.
 
-The important idea is:
+## Weakness Of Previous Procedure
+
+The previous procedure relied mainly on the `vc_waiver.tcl` file and a separate PPT file, instead of a single Excel source of truth. That had several weaknesses:
+
+- `vc_waiver.tcl` is a plain text file, so it cannot carry detailed review context such as screenshots or images of the waived issue.
+- The PPT file did carry that detailed context, but it was maintained separately and was not synced regularly with `vc_waiver.tcl`, so the two artifacts drifted apart over time.
+- Because review information was split across a text file and a slide deck with no consistent sync, reviewers had no single place to see both the waiver decision and its justification.
+- This made review and peer-review difficult: peer reviewers had to cross-check two disconnected files, and outdated or missing PPT updates could hide the real reasoning behind a waiver.
+
+## Proposed Solution
+
+Instead of splitting the waiver decision into `vc_waiver.tcl` and its justification into a rarely-synced PPT file, this flow uses Excel as both the reviewer UI and the review source of truth, so decisions and their supporting context always live together and stay in sync:
 
 ```text
 report_lint.full.xlsx + reviewer decisions
   -> lint_review.xlsx as the review source of truth
   -> generated VC LINT waiver Tcl
 ```
-
-Excel is used as both the reviewer UI and the review source of truth.
 
 The generated Excel workbook follows the familiar LINT report layout:
 
@@ -33,7 +42,21 @@ The `Judgment` column has a dropdown for the supported review decisions.
 
 User-added columns are preserved in `lint_review.xlsx` for human notes, but ignored when `vc_waiver.tcl` is generated.
 
-`vc_waiver.tcl` is generated in GUI-style: one `waive_violation` command per waived issue, with names based on the LINT violation number such as `DeadCode-ML_739`.
+`vc_waiver.tcl` is generated in GUI-style: one `waive_violation` command per waived issue, with names based on the LINT violation number such as `DeadCode-ML_739`. It is always regenerated from `lint_review.xlsx`, so it never drifts out of sync the way it could with a manually maintained PPT.
+
+## Supported Features
+
+This environment supports a two-command review loop around the existing sanity flow:
+
+- Generate `vc_waiver.tcl` directly from reviewer decisions in `outputs/lint_review.xlsx`.
+- Convert the latest sanity report log into `report_lint.full.xlsx` by running `make -f Makefile excel`.
+- Merge `report_lint.full.xlsx` into `outputs/lint_review.xlsx` while preserving reviewer `Judgment` and `Comment`.
+- Keep `outputs/lint_review.xlsx` as the single source of truth for review status and waiver decisions.
+- Mark issues as `NEW`, `ACTIVE`, `CHANGED`, or `REMOVED` during merge.
+- Preserve user-added columns in `lint_review.xlsx` for notes, tracking, links, or images; those columns are ignored by waiver generation.
+- Color workbook headers: green for user-editable columns and gray for report-owned columns.
+- Enable sheet filters and provide a dropdown list for the `Judgment` column.
+- Generate GUI-style VC LINT waiver Tcl from rows whose `Judgment` is `WAIVED`, `APPROVED`, or `APPROVED_WAIVE`.
 
 ## Files
 

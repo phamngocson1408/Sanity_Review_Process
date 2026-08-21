@@ -2,13 +2,30 @@
 
 This document describes the intended review loop for LINT sanity issues and waivers.
 
-## Main Idea
+## Weakness Of Previous Procedure
 
-`outputs/lint_review.xlsx` is the reviewer UI and the review source of truth.
+- Review relied mainly on the `vc_waiver.tcl` file and a separate PPT file, instead of a single Excel source of truth.
+- `vc_waiver.tcl` is a plain text file, so it cannot carry detailed review context such as screenshots or images of the waived issue.
+- The PPT file did carry that detailed context, but it was not synced regularly with `vc_waiver.tcl`, so the two artifacts drifted apart over time.
+- With review information split across a text file and a slide deck, review and peer-review were difficult: reviewers had to cross-check two disconnected files, and stale PPT content could hide the real reasoning behind a waiver.
 
-`report_lint.full.xlsx` is the tool-generated LINT report.
+## Proposed Solution
 
-`vc_waiver.tcl` is generated from approved/waived items in `lint_review.xlsx` and is used by the next sanity check run.
+`outputs/lint_review.xlsx` becomes the single reviewer UI and review source of truth, replacing the split between `vc_waiver.tcl` and the PPT file:
+
+- Being an Excel workbook rather than plain text, it can hold the waiver decision together with rich review context (comments, extra columns, images) in one place, which `vc_waiver.tcl` alone could not carry.
+- `report_lint.full.xlsx`, the tool-generated LINT report, is merged into `lint_review.xlsx`, so reviewers and peer reviewers see decisions and their justification side by side instead of cross-checking a separate slide deck.
+- `vc_waiver.tcl` is generated from approved/waived items in `lint_review.xlsx` and used by the next sanity check run, so it is always derived from the same up-to-date source instead of drifting out of sync with a manually maintained PPT.
+
+## Supported Features
+
+- `gen_waiver` generates `vc_waiver.tcl` from `outputs/lint_review.xlsx`.
+- `merge_excel` runs `make -f Makefile excel` and merges the refreshed `report_lint.full.xlsx` into `outputs/lint_review.xlsx`.
+- Reviewer-owned fields are limited to `Judgment`, `Comment`, and user-added columns.
+- Report-owned columns are refreshed from `report_lint.full.xlsx`.
+- Header colors show ownership: green means editable, gray means report-owned.
+- Filters are enabled on each sheet, and `Judgment` provides a dropdown list.
+- Review state is tracked in the workbook with `record_status`
 
 ## Directory Layout
 
