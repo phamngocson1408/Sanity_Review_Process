@@ -1247,8 +1247,8 @@ def row_to_report_sheet(row: dict[str, str], columns: list[str], index: int, use
         fields = {}
     values = {
         "No.": str(index),
-        "Person in Charge": "",
-        "Date": "",
+        "Person in Charge": row.get("owner", ""),
+        "Date": row.get("review_date", ""),
         "Judgment": row.get("review_status", ""),
         "Comment": row.get("review_comment", ""),
         "record_status": row.get("record_status", ""),
@@ -1262,6 +1262,8 @@ def row_to_report_sheet(row: dict[str, str], columns: list[str], index: int, use
         "Statement": row.get("statement", ""),
     }
     values.update({key: str(value) for key, value in fields.items()})
+    for key in MANAGEMENT_COLUMNS:
+        values[key] = row.get(key, "")
     values.update(user_extra_values.get(row.get("issue_id", ""), {}))
     return [values.get(col, "") for col in columns]
 
@@ -1383,20 +1385,16 @@ def import_excel_to_db(excel_path: Path, review_db_path: Path) -> list[dict[str,
 
 
 def update_review_from_reports(args: argparse.Namespace) -> list[dict[str, str]]:
-    rows = collect_current_rows(args.full_report, args.waived_report, args.waiver_tcl)
-    old_db = args.old_db or args.review_db
-    if old_db and old_db.exists():
-        rows = merge_rows(read_csv(old_db), rows)
+    rows = collect_current_rows(args.full_report, args.waived_report, None)
     write_csv(args.review_db, rows)
-    export_excel(args.review_db, args.excel, args.summary)
-    if args.waiver_tcl and args.waiver_audit:
-        audit_waiver_rules(args.waiver_tcl, rows, args.waiver_audit)
+    export_review_workbook(rows, args.excel, args.summary)
     print(f"review rows: {len(rows)}")
+    print(f"full report : {args.full_report}")
+    if args.waived_report:
+        print(f"waived report: {args.waived_report}")
     print(f"review db   : {args.review_db}")
     print(f"excel       : {args.excel}")
     print(f"summary     : {args.summary}")
-    if args.waiver_tcl and args.waiver_audit:
-        print(f"waiver audit: {args.waiver_audit}")
     return rows
 
 
@@ -1451,8 +1449,7 @@ def cmd_gen_waiver(args: argparse.Namespace) -> None:
 
 
 def cmd_merge_excel(args: argparse.Namespace) -> None:
-    run_make_excel(Path(__file__).resolve().parent)
-    update_review_from_report_excel(args, previous_excel=args.excel if args.excel.exists() else None)
+    update_review_from_reports(args)
 
 
 def cmd_parse(args: argparse.Namespace) -> None:
@@ -1523,12 +1520,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--user", default="")
     p.set_defaults(func=cmd_gen_waiver)
 
-    p = sub.add_parser("merge_excel", help="Run make -f Makefile excel, then merge report_lint.full.xlsx into lint_review.xlsx.")
-    p.add_argument("--report-excel", type=Path, default=Path("report_lint.full.xlsx"))
+    p = sub.add_parser("merge_excel", help="Merge report logs into lint_review.xlsx.")
+    p.add_argument("--full-report", type=Path, default=Path("reports/report_lint.full.log"))
+    p.add_argument("--waived-report", type=Path, default=Path("reports/report_lint.waived.log"))
+    p.add_argument("--review-db", type=Path, default=Path("data/lint_review_db.csv"))
     p.add_argument("--excel", type=Path, default=Path("outputs/lint_review.xlsx"))
     p.add_argument("--summary", type=Path, default=Path("outputs/lint_summary.csv"))
-    p.add_argument("--waiver-tcl", type=Path, default=Path("vc_waiver.tcl"))
-    p.add_argument("--waiver-audit", type=Path, default=Path("outputs/waiver_rule_audit.csv"))
     p.set_defaults(func=cmd_merge_excel)
 
     p = sub.add_parser("update-review-excel", help="Merge report_lint.full.xlsx into lint_review.xlsx.")
