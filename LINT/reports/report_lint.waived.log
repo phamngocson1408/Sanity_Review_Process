@@ -7,7 +7,7 @@
     Version : V-2023.12-1 -- Jan 22, 2024
 
   Report Info
-    Created : Aug 20, 2026  16:16:18
+    Created : Sep 04, 2026  11:36:02
     Options
       -limit 0
       -include_compressed
@@ -21,9 +21,9 @@
   Stage              Family      Fatals    Errors  Warnings     Infos    Waived
   -----              --------  --------  --------  --------  --------  --------
   LANGUAGE_CHECK     CODING           0         0         0         0       189
-  LINT_FORMAL_CHECK  CODING           0         0         0         0       110
+  LINT_FORMAL_CHECK  CODING           0         0         0         0       109
   -----              --------  --------  --------  --------  --------  --------
-  Total                               0         0         0         0       299
+  Total                               0         0         0         0       298
 
 
   -----------------------------------------------------------------------------
@@ -41,11 +41,11 @@
   warning   LINT_FORMAL_CHECK  W164a                            0          56
   warning   LINT_FORMAL_CHECK  W362                             0           3
   warning   LINT_FORMAL_CHECK  W415a                            0           3
-  warning   LINT_FORMAL_CHECK  W551                             0           2
+  warning   LINT_FORMAL_CHECK  W551                             0           1
   info      LANGUAGE_CHECK     W240                             0           1
   info      LANGUAGE_CHECK     W528                             0           1
   --------  -----              ---------------------------  -----  ----------
-  Total                                                         0         299
+  Total                                                         0         298
 
 
 
@@ -5479,7 +5479,7 @@
     State      : Waived
 
   -----------------------------------------------------------------------------
-  W551  (0 warning/2 waived)
+  W551  (0 warning/1 waived)
   -----------------------------------------------------------------------------
   Tag                 : W551
   Description         : Case statement marked [NodeType] has a default clause
@@ -5495,22 +5495,6 @@
     Comment           : This can be waived. Confirmed by the owner of SRAM safety wrapper generator.
     Filename         : vc_waiver.tcl
     Line             : 235
-    State            : Waived
-  -----------------------------------------------------------------------------
-  Tag                 : W551
-  Description         : Case statement marked [NodeType] has a default clause
-  Violation           : Lint:838
-  Goal                : BOS_LINT_RULE
-  Module              : ln04lpa_a00_mc_rd2rs_hsr_lvt_320x72m2b1c1_wrapper_safety_data_decoder_st_ctrl
-  FileName            : /storage/project/atlas/design/user/pnson/ATLAS_WORKING/DK/mem/SAFETY_WRAPPER/ln04lpa_a00_mc_rd2rs_hsr_lvt_320x72m2b1c1_wrapper_safety_sf64eadi1/ln04lpa_a00_mc_rd2rs_hsr_lvt_320x72m2b1c1_wrapper_safety_sf64eadi1.sv
-  LineNumber          : 600
-  Statement           :     unique casez (r_st)
-  NodeType            : unique_case
-  Waiver
-    Name              : W551_843
-    Comment           : This can be waived. Confirmed by the owner of SRAM safety wrapper generator.
-    Filename         : vc_waiver.tcl
-    Line             : 238
     State            : Waived
 
   -----------------------------------------------------------------------------

@@ -369,7 +369,7 @@ def parse_waiver_tcl(path: Path) -> dict[str, dict[str, object]]:
 def parse_filter(filter_text: str) -> OrderedDict[str, str]:
     fields: OrderedDict[str, str] = OrderedDict()
     # VC waiver filters observed in the sample are simple AND-ed comparisons.
-    pattern = re.compile(r'\(?\s*([A-Za-z_][A-Za-z0-9_]*)\s*(==|=~)\s*"((?:\\.|[^"])*)"\s*\)?')
+    pattern = re.compile(r'\(?\s*([A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)*)\s*(==|=~)\s*"((?:\\.|[^"])*)"\s*\)?')
     for key, _op, value in pattern.findall(filter_text):
         fields[key] = value.replace('\\"', '"')
     return fields
@@ -382,6 +382,10 @@ def tcl_escape(value: str) -> str:
 def filter_expr(filter_fields: dict[str, str]) -> str:
     parts = []
     for key, value in filter_fields.items():
+        # Older review workbooks/CSVs lost this prefix in parse_filter.
+        # Repair those saved filters when exporting as well.
+        if key == "LintPropertyName":
+            key = "PropertyList:LintPropertyName"
         op = "=~" if "*" in value or "?" in value else "=="
         escaped = value.replace("\\", "\\\\").replace('"', '\\"')
         parts.append(f'({key} {op} "{escaped}")')

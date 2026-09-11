@@ -1,0 +1,238 @@
+waive_violation -add {STARC05-3_3_1_4b_717_717}  -comment {These warnings are from Safety script} -app { lint } -tag { STARC05-3.3.1.4b } -user { minsy0731 } -timestamp { 26-05-2025 13:31:53 }
+waive_violation -add {STARC05-3_3_1_4b_717_718}  -comment {These warnings are from Safety script} -app { lint } -tag { STARC05-3.3.1.4b } -user { minsy0731 } -timestamp { 26-05-2025 13:31:53 }
+waive_violation -add {DeadCode-ML_740}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_739}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_741}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_742}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_743}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_744}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_745}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_746}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_747}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_748}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_749}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_750}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_751}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_752}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_753}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_754}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_755}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_756}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_757}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_758}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_726}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_727}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_728}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_729}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_730}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_731}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_732}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_733}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_734}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_735}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_736}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_737}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {DeadCode-ML_738}  -comment {Dead Code LINT warning}   -app { lint } -tag { DeadCode-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:32:49 }
+waive_violation -add {MissingFsmStateTransition_719}  -comment {This FSM is flexible because FSM depends on the bus data width}   -app { lint } -tag { MissingFsmStateTransition } -user { minsy0731 } -timestamp { 26-05-2025 13:33:15 }
+waive_violation -add {MissingFsmStateTransition_721}  -comment {This FSM is flexible because FSM depends on the bus data width}   -app { lint } -tag { MissingFsmStateTransition } -user { minsy0731 } -timestamp { 26-05-2025 13:33:15 }
+waive_violation -add {MissingFsmStateTransition_720}  -comment {This FSM is flexible because FSM depends on the bus data width}   -app { lint } -tag { MissingFsmStateTransition } -user { minsy0731 } -timestamp { 26-05-2025 13:33:15 }
+waive_violation -add {NotReachableFsmState_722}  -comment {AESDMA FSM warning is because of the flexibity for Bus width generalization. Other FSM warning is from generated ARM Async bridge.}   -app { lint } -tag { NotReachableFsmState } -user { minsy0731 } -timestamp { 26-05-2025 13:33:56 }
+waive_violation -add {NotReachableFsmState_723}  -comment {AESDMA FSM warning is because of the flexibity for Bus width generalization. Other FSM warning is from generated ARM Async bridge.}   -app { lint } -tag { NotReachableFsmState } -user { minsy0731 } -timestamp { 26-05-2025 13:33:56 }
+waive_violation -add {NotReachableFsmState_725}  -comment {AESDMA FSM warning is because of the flexibity for Bus width generalization. Other FSM warning is from generated ARM Async bridge.}   -app { lint } -tag { NotReachableFsmState } -user { minsy0731 } -timestamp { 26-05-2025 13:33:56 }
+waive_violation -add {NotReachableFsmState_724}  -comment {AESDMA FSM warning is because of the flexibity for Bus width generalization. Other FSM warning is from generated ARM Async bridge.}   -app { lint } -tag { NotReachableFsmState } -user { minsy0731 } -timestamp { 26-05-2025 13:33:56 }
+waive_violation -add {RegisterStuckInResetState-ML_759}  -comment {In the condition of 128bit bus width, this register does not use.}   -app { lint } -tag { RegisterStuckInResetState-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:34:31 }
+waive_violation -add {SignedUnsignedExpr-ML_799}  -comment {This is confirmed by designer}   -app { lint } -tag { SignedUnsignedExpr-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:34:57 }
+waive_violation -add {SignedUnsignedExpr-ML_773}  -comment {This is confirmed by designer}   -app { lint } -tag { SignedUnsignedExpr-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:34:57 }
+waive_violation -add {SignedUnsignedExpr-ML_774}  -comment {This is confirmed by designer}   -app { lint } -tag { SignedUnsignedExpr-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:34:57 }
+waive_violation -add {SignedUnsignedExpr-ML_760}  -comment {This is confirmed by designer}   -app { lint } -tag { SignedUnsignedExpr-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:34:57 }
+waive_violation -add {SignedUnsignedExpr-ML_796}  -comment {This is confirmed by designer}   -app { lint } -tag { SignedUnsignedExpr-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:34:57 }
+waive_violation -add {SignedUnsignedExpr-ML_797}  -comment {This is confirmed by designer}   -app { lint } -tag { SignedUnsignedExpr-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:34:57 }
+waive_violation -add {SignedUnsignedExpr-ML_798}  -comment {This is confirmed by designer}   -app { lint } -tag { SignedUnsignedExpr-ML } -user { minsy0731 } -timestamp { 26-05-2025 13:34:57 }
+waive_violation -add {W164a_785}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_788}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_789}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_790}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_792}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_793}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_794}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_795}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_761}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_762}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_763}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_764}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_765}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_766}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_767}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_768}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_769}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_772}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W164a_775}  -comment {These counters updating logic are confirmed by designer}   -app { lint } -tag { W164a } -user { minsy0731 } -timestamp { 26-05-2025 13:35:23 }
+waive_violation -add {W362_786}  -comment {In for loop state, assign could be override.These cases are confirmed by designer.}  -app { lint } -tag { W362 } -user { minsy0731 } -timestamp { 26-05-2025 13:35:48 }
+waive_violation -add {W362_770}  -comment {In for loop state, assign could be override.These cases are confirmed by designer.}  -app { lint } -tag { W362 } -user { minsy0731 } -timestamp { 26-05-2025 13:35:48 }
+waive_violation -add {W362_771}  -comment {In for loop state, assign could be override.These cases are confirmed by designer.}  -app { lint } -tag { W362 } -user { minsy0731 } -timestamp { 26-05-2025 13:35:48 }
+waive_violation -add {W362_791}  -comment {In for loop state, assign could be override.These cases are confirmed by designer.}  -app { lint } -tag { W362 } -user { minsy0731 } -timestamp { 26-05-2025 13:35:48 }
+waive_violation -add {W362_776}  -comment {In for loop state, assign could be override.These cases are confirmed by designer.}  -app { lint } -tag { W362 } -user { minsy0731 } -timestamp { 26-05-2025 13:35:48 }
+waive_violation -add {W415a_787}  -comment {These are from combinationl logic with for loop state, which is overriding assign.}   -app { lint } -tag { W415a } -user { minsy0731 } -timestamp { 26-05-2025 13:36:10 }
+waive_violation -add {W415a_777}  -comment {These are from combinationl logic with for loop state, which is overriding assign.}   -app { lint } -tag { W415a } -user { minsy0731 } -timestamp { 26-05-2025 13:36:10 }
+waive_violation -add {W415a_778}  -comment {These are from combinationl logic with for loop state, which is overriding assign.}   -app { lint } -tag { W415a } -user { minsy0731 } -timestamp { 26-05-2025 13:36:10 }
+waive_violation -add {W415a_779}  -comment {These are from combinationl logic with for loop state, which is overriding assign.}   -app { lint } -tag { W415a } -user { minsy0731 } -timestamp { 26-05-2025 13:36:10 }
+waive_violation -add {W415a_782}  -comment {These are from combinationl logic with for loop state, which is overriding assign.}   -app { lint } -tag { W415a } -user { minsy0731 } -timestamp { 26-05-2025 13:36:49 }
+waive_violation -add {W415a_783}  -comment {These are from combinationl logic with for loop state, which is overriding assign.}   -app { lint } -tag { W415a } -user { minsy0731 } -timestamp { 26-05-2025 13:36:49 }
+waive_violation -add {W415a_784}  -comment {These are from combinationl logic with for loop state, which is overriding assign.}   -app { lint } -tag { W415a } -user { minsy0731 } -timestamp { 26-05-2025 13:36:49 }
+waive_violation -add {W415a_780}  -comment {These are from combinationl logic with for loop state, which is overriding assign.}   -app { lint } -tag { W415a } -user { minsy0731 } -timestamp { 26-05-2025 13:36:49 }
+waive_violation -add {W415a_781}  -comment {These are from combinationl logic with for loop state, which is overriding assign.}   -app { lint } -tag { W415a } -user { minsy0731 } -timestamp { 26-05-2025 13:36:49 }
+waive_violation -add {W287b_800}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_801}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_802}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_803}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_804}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_805}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_806}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_807}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_808}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_809}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_810}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_811}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_812}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_813}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_814}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_815}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_825}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_826}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_827}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_828}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_830}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_831}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_832}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_833}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_834}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_835}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_836}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_837}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_838}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_839}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_840}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_841}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_842}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_843}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_844}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_845}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_846}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_851}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_852}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_853}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_854}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_855}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_856}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_857}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_858}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_859}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_860}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_861}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_862}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_863}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_864}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_865}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_866}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_867}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_868}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_869}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_870}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_871}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_872}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_873}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_874}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_875}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_876}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_877}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_878}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_879}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_880}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_881}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_883}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_884}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_885}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_886}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_887}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_888}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_889}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_890}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_891}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_892}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_893}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_894}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_895}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_896}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_897}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_901}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_902}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_912}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_913}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_914}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_915}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_916}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_917}  -comment {output port is not connected warning}   -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_920}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W240_923}  -comment {output port is not connected warning}   -app { lint } -tag { W240 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_924}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W287b_925}  -comment {output port is not connected warning}   -app { lint } -tag { W287b } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_926}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_927}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_928}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_929}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_930}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_931}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_932}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_933}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_934}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_935}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_936}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_937}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_938}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_939}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_940}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_941}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_942}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_943}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_944}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_945}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_946}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_947}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_948}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_949}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_950}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_951}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_952}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_953}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_954}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_955}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_956}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_957}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_958}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_959}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_960}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_961}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_962}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_963}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_964}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_965}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_966}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_967}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_968}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_969}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_970}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_971}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_972}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_973}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W486_974}  -comment {output port is not connected warning}  -app { lint } -tag { W486 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_975}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_976}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W486_977}  -comment {output port is not connected warning}  -app { lint } -tag { W486 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {W528_978}  -comment {output port is not connected warning}  -app { lint } -tag { W528 } -user { minsy0731 } -timestamp { 26-05-2025 13:37:24 }
+waive_violation -add {STARC05-1_3_1_3_1_1}  -comment {All coding style is in Async reset. But this resets are from register something like sw_reset.}   -app { lint } -tag { STARC05-1.3.1.3 } -user { minsy0731 } -timestamp { 26-05-2025 13:38:10 }
+waive_violation -add {STARC05-1_3_1_3_1_2}  -comment {All coding style is in Async reset. But this resets are from register something like sw_reset.}   -app { lint } -tag { STARC05-1.3.1.3 } -user { minsy0731 } -timestamp { 26-05-2025 13:38:10 }
+waive_violation -add {STARC05-1_3_1_3_1_3}  -comment {All coding style is in Async reset. But this resets are from register something like sw_reset.}   -app { lint } -tag { STARC05-1.3.1.3 } -user { minsy0731 } -timestamp { 26-05-2025 13:38:10 }
+waive_violation -add {W551_837}  -comment {This can be waived. Confirmed by the owner of SRAM safety wrapper generator.}  -filter {(Goal == "BOS_LINT_RULE") AND (Module == "ln04lpa_a00_mc_rd2rs_hsr_lvt_32x138m2b1c1_wrapper_safety_data_decoder_st_ctrl") AND (LineNumber == "723") AND (Statement == "    unique casez (r_st)") AND (NodeType == "unique_case") AND (PropertyList:LintPropertyName == "Property_142")}  -app { lint } -tag { W551 } -user { pnson } -timestamp { 22-06-2026 13:10:10 }
+waive_violation -add {W551_842}  -comment {This can be waived. Confirmed by the owner of SRAM safety wrapper generator.}  -filter {(Goal == "BOS_LINT_RULE") AND (Module == "ln04lpa_a00_mc_rd2rs_hsr_lvt_320x72m2b1c1_wrapper_safety_data_decoder_st_ctrl") AND (LineNumber == "600") AND (Statement == "    unique casez (r_st)") AND (NodeType == "unique_case") AND (PropertyList:LintPropertyName == "Property_147")}  -app { lint } -tag { W551 } -user { pnson } -timestamp { 22-06-2026 13:10:10 }
+waive_violation -add {W551_838}  -comment {This can be waived. Confirmed by the owner of SRAM safety wrapper generator.}  -filter {(Goal == "BOS_LINT_RULE") AND (Module == "ln04lpa_a00_mc_rd2rs_hsr_lvt_32x138m2b1c1_wrapper_safety_data_decoder_st_ctrl") AND (LineNumber == "723") AND (Statement == "    unique casez (r_st)") AND (NodeType == "unique_case") AND (PropertyList:LintPropertyName == "Property_141")}  -app { lint } -tag { W551 } -user { pnson } -timestamp { 24-06-2026 14:04:14 }
+waive_violation -add {W551_843}  -comment {This can be waived. Confirmed by the owner of SRAM safety wrapper generator.}  -filter {(Goal == "BOS_LINT_RULE") AND (Module == "ln04lpa_a00_mc_rd2rs_hsr_lvt_320x72m2b1c1_wrapper_safety_data_decoder_st_ctrl") AND (LineNumber == "600") AND (Statement == "    unique casez (r_st)") AND (NodeType == "unique_case") AND (PropertyList:LintPropertyName == "Property_146")}  -app { lint } -tag { W551 } -user { pnson } -timestamp { 24-06-2026 14:04:14 }
