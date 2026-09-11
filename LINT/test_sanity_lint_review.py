@@ -9,10 +9,12 @@ from sanity_lint_review import (
     generate_waiver_from_rows,
     merge_rows,
     normalize_record_status,
+    parse_filter_fields_spec,
     parse_filter,
     parse_waiver_tcl,
     report_ordered_sheet_columns,
     sheet_xml,
+    waiver_filter_expression,
     write_xlsx,
 )
 
@@ -51,7 +53,8 @@ class WorkbookColumnTests(unittest.TestCase):
         self.assertEqual(
             columns,
             [
-                "No.", "IP Owner", "Owner Action", "Owner Comment", "Reviewer",
+                "No.", "IP Owner", "Owner Action", "Owner Comment",
+                "Filter Mode", "Filter Fields", "Custom Filter", "Reviewer",
                 "Reviewer Decision", "Reviewer Comment", *WORKBOOK_MANAGEMENT_COLUMNS,
                 "Tag", "Reviewer Note",
             ],
@@ -83,12 +86,14 @@ class WorkbookColumnTests(unittest.TestCase):
             with zipfile.ZipFile(path) as workbook:
                 comments = workbook.read("xl/comments1.xml").decode("utf-8")
                 sheet = workbook.read("xl/worksheets/sheet1.xml").decode("utf-8")
+                note_shapes = workbook.read("xl/drawings/commentsDrawing1.vml").decode("utf-8")
 
         self.assertIn("NEW: the issue appears for the first time", comments)
         self.assertIn("full: the issue comes from report_lint.full", comments)
         self.assertIn("WAIVED: the IP owner decided to waive", comments)
         self.assertIn("DISAPPROVED: the reviewer rejects", comments)
         self.assertIn('<legacyDrawing r:id="rId2"/>', sheet)
+        self.assertIn("width:220pt;height:100pt", note_shapes)
 
 
 class RecordStatusTests(unittest.TestCase):
@@ -135,6 +140,8 @@ class RecordStatusTests(unittest.TestCase):
             "reviewer_decision": "DISAPPROVED",
             "waiver_name": "W551_test",
             "owner_comment": "Owner waiver reason",
+            "filter_mode": "CUSTOM",
+            "custom_filter": '(Module =~ "top_*")',
             "fields_json": '{"Tag": "W551"}',
             "filter_json": "{}",
         })
@@ -144,6 +151,60 @@ class RecordStatusTests(unittest.TestCase):
             generated = output.read_text(encoding="utf-8")
 
         self.assertIn("W551_test", generated)
+        self.assertIn('-filter {(Module =~ "top_*")}', generated)
+
+    def test_filter_fields_support_row_values_and_wildcards(self):
+        fields = {"Goal": "LINT", "Module": "top"}
+        selected = parse_filter_fields_spec("Goal, Module=axi_*", fields)
+
+        self.assertEqual(filter_expr(selected), '(Goal == "LINT") AND (Module =~ "axi_*")')
+
+    def test_identical_waiver_rules_are_emitted_once_and_marked(self):
+        first = self.row("first")
+        second = self.row("second")
+        for row in (first, second):
+            row.update({
+                "owner_action": "WAIVED",
+                "owner_comment": "Shared reason",
+                "filter_mode": "CUSTOM",
+                "custom_filter": '(Module == "top")',
+                "fields_json": '{"Tag":"W551","Module":"top"}',
+            })
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "waiver.tcl"
+            generate_waiver_from_rows([first, second], output)
+            generated = output.read_text(encoding="utf-8")
+
+        self.assertEqual(generated.count("waive_violation -add"), 1)
+        self.assertEqual(first["waiver_name"], second["waiver_name"])
+        self.assertIn("Primary waiver rule", first["_waiver_note"])
+        self.assertIn("primary issue first", second["_waiver_note"])
+
+    def test_auto_filter_adds_fields_until_issue_is_unique(self):
+        first = self.row("first", object_name="sig_a")
+        second = self.row("second", object_name="sig_b")
+        first["fields_json"] = '{"Goal":"LINT","Module":"top","Signal":"sig_a"}'
+        second["fields_json"] = '{"Goal":"LINT","Module":"top","Signal":"sig_b"}'
+
+        expression = waiver_filter_expression(first, [first, second])
+
+        self.assertEqual(
+            expression,
+            '(Goal == "LINT") AND (Module == "top") AND (Signal == "sig_a")',
+        )
+
+    def test_auto_filter_excludes_filename_and_line_number(self):
+        row = self.row("single")
+        row["fields_json"] = (
+            '{"Goal":"LINT","Module":"top","FileName":"top.sv",'
+            '"LineNumber":"42","Signal":"sig"}'
+        )
+
+        expression = waiver_filter_expression(row, [row])
+
+        self.assertNotIn("FileName", expression)
+        self.assertNotIn("LineNumber", expression)
 
 
 if __name__ == "__main__":

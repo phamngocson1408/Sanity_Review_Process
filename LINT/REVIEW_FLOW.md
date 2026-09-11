@@ -27,6 +27,7 @@ This document describes the intended review loop for LINT sanity issues and waiv
 - Header colors show ownership: green means editable, gray means report-owned, and pale yellow identifies script-managed metadata.
 - Filters are enabled on each sheet. `Owner Action` and `Reviewer Decision` provide dropdown lists.
 - Excel Notes on status headers describe their supported values.
+- Waiver filters support `AUTO`, `FIELDS`, and `CUSTOM` modes.
 - Issue change state is tracked with `record_status`.
 
 ## Directory Layout
@@ -97,9 +98,20 @@ The IP owner updates:
 IP Owner
 Owner Action: UNREVIEWED / FIXED / WAIVED
 Owner Comment
+Filter Mode: AUTO / FIELDS / CUSTOM
+Filter Fields
+Custom Filter
 ```
 
 `Owner Action = WAIVED` tells the script to generate a waiver for that issue. `Owner Action = FIXED` means the IP owner resolved the issue without a waiver.
+
+The filter columns control how that issue is identified in `vc_waiver.tcl`:
+
+- `AUTO` progressively selects report fields until the issue is unique among current issues with the same tag. It deliberately excludes `FileName` and `LineNumber`. If multiple issues have identical supported fields, they intentionally share one waiver rule.
+- `FIELDS` uses a comma-separated list such as `Goal, Module, Signal`. A bare field uses the value in that row. `Module=axi_*` overrides the row value, and `*` or `?` selects the Tcl `=~` operator.
+- `CUSTOM` uses the complete expression entered in `Custom Filter`.
+
+The script reports an error instead of generating an unfiltered or invalid waiver when the selected mode cannot produce a valid filter.
 
 6. The reviewer evaluates the IP owner's handling.
 
@@ -268,7 +280,23 @@ waive_violation -add {DeadCode-ML_739} ...
 
 The script does not collapse multiple waived issues that share the same generated waiver name, because the GUI-style `vc_waiver.tcl` keeps issue-level waiver commands.
 
-The script derives Tcl `-filter` fields from the report-owned columns. User-added columns are not used.
+Every generated waiver contains a Tcl `-filter`. The IP owner controls it with `Filter Mode`, `Filter Fields`, and `Custom Filter`. User-added columns are not used.
+
+Filter mode priority is explicit: the script uses only the mode selected in `Filter Mode`.
+
+```text
+AUTO
+  Select report fields until one issue is identified, excluding FileName and LineNumber.
+  Issues with identical supported fields share one rule.
+
+FIELDS
+  Use the listed report fields and optional user-supplied values or wildcards.
+
+CUSTOM
+  Use the user-defined Tcl filter expression unchanged.
+```
+
+Rows with the same tag, resulting filter expression, and owner comment are emitted as one `waive_violation` command. The first row is the primary issue. The primary and repeated rows use the same `waiver_name`, and Excel Notes on their `waiver_name` cells identify the shared rule relationship.
 
 Exact match:
 

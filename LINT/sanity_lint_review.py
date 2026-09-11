@@ -15,8 +15,10 @@ import json
 import os
 import posixpath
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import zipfile
 from collections import Counter, OrderedDict
 from datetime import datetime
@@ -32,6 +34,9 @@ BASE_COLUMNS = [
     "waiver_enabled",
     "waiver_name",
     "owner_comment",
+    "filter_mode",
+    "filter_fields",
+    "custom_filter",
     "ip_owner",
     "reviewer",
     "reviewer_decision",
@@ -101,6 +106,9 @@ FILTER_PRIORITY = [
     "Module_Name",
     "ExprSize",
 ]
+AUTO_FILTER_PRIORITY = [
+    field for field in FILTER_PRIORITY if field not in {"FileName", "LineNumber"}
+]
 
 NS_MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
@@ -112,6 +120,9 @@ REVIEW_SHEET_COLUMNS = [
     "IP Owner",
     "Owner Action",
     "Owner Comment",
+    "Filter Mode",
+    "Filter Fields",
+    "Custom Filter",
     "Reviewer",
     "Reviewer Decision",
     "Reviewer Comment",
@@ -159,6 +170,20 @@ HEADER_NOTES = {
         "UNREVIEWED: the IP owner has not handled the issue\n"
         "FIXED: the IP owner fixed the issue\n"
         "WAIVED: the IP owner decided to waive the issue"
+    ),
+    "Filter Mode": (
+        "AUTO: automatically select fields that uniquely identify the issue\n"
+        "FIELDS: use the fields listed in Filter Fields\n"
+        "CUSTOM: use the expression in Custom Filter"
+    ),
+    "Filter Fields": (
+        "Comma-separated fields. A bare field uses the value in this row.\n"
+        "Override a value with Field=value. Wildcards * and ? use the =~ operator.\n"
+        "Example: Goal, Module=axi_*, Signal=data_?"
+    ),
+    "Custom Filter": (
+        "A complete VC Static filter expression.\n"
+        "Example: (Goal == \"BOS_LINT_RULE\") AND (Module =~ \"axi_*\")"
     ),
     "Reviewer Decision": (
         "PENDING: the handling has not been reviewed\n"
@@ -466,13 +491,6 @@ def generated_waiver_name(row: dict[str, str], duplicate_waiver_names: set[str],
     return name
 
 
-def should_emit_filter(row: dict[str, str]) -> bool:
-    # The existing GUI-generated Tcl is mostly one named waiver per violation
-    # without filters. W551 examples in vc_waiver.tcl_old use filters to keep
-    # waivers specific, so preserve that style for W551.
-    return row.get("tag") == "W551"
-
-
 def fields_for_filter(fields: dict[str, str]) -> OrderedDict[str, str]:
     result: OrderedDict[str, str] = OrderedDict()
     for key in FILTER_PRIORITY:
@@ -480,6 +498,80 @@ def fields_for_filter(fields: dict[str, str]) -> OrderedDict[str, str]:
         if value:
             result[key] = value
     return result
+
+
+def row_issue_fields(row: dict[str, str]) -> dict[str, str]:
+    try:
+        fields = json.loads(row.get("fields_json", "{}") or "{}")
+    except json.JSONDecodeError:
+        fields = {}
+    return fields if isinstance(fields, dict) else {}
+
+
+def parse_filter_fields_spec(spec: str, fields: dict[str, str]) -> OrderedDict[str, str]:
+    result: OrderedDict[str, str] = OrderedDict()
+    for item in (part.strip() for part in spec.split(",")):
+        if not item:
+            continue
+        if "=" in item:
+            key, value = (part.strip() for part in item.split("=", 1))
+        else:
+            key, value = item, norm(fields.get(item))
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)*", key):
+            raise ValueError(f"Invalid filter field name: {key!r}")
+        if not value:
+            raise ValueError(f"Filter field {key!r} has no value")
+        result[key] = value
+    if not result:
+        raise ValueError("Filter Fields must contain at least one field")
+    return result
+
+
+def format_filter_fields_spec(filter_fields: dict[str, str], fields: dict[str, str]) -> str:
+    items = []
+    for key, value in filter_fields.items():
+        items.append(key if norm(fields.get(key)) == norm(value) else f"{key}={value}")
+    return ", ".join(items)
+
+
+def auto_filter_fields(row: dict[str, str], rows: list[dict[str, str]]) -> OrderedDict[str, str]:
+    fields = row_issue_fields(row)
+    candidates = [
+        candidate for candidate in rows
+        if candidate.get("record_status") != "REMOVED" and candidate.get("tag") == row.get("tag")
+    ]
+    selected: OrderedDict[str, str] = OrderedDict()
+    for key in AUTO_FILTER_PRIORITY:
+        value = norm(fields.get(key))
+        if not value:
+            continue
+        selected[key] = value
+        matches = [
+            candidate for candidate in candidates
+            if all(norm(row_issue_fields(candidate).get(name)) == expected for name, expected in selected.items())
+        ]
+        if len(matches) == 1:
+            return selected
+    issue = row.get("issue_id") or row.get("tag") or "unknown issue"
+    if selected:
+        return selected
+    raise ValueError(f"AUTO filter cannot identify {issue}: no supported fields have values")
+
+
+def waiver_filter_expression(row: dict[str, str], rows: list[dict[str, str]]) -> str:
+    mode = norm(row.get("filter_mode") or "AUTO").upper()
+    if mode == "CUSTOM":
+        expression = row.get("custom_filter", "").strip()
+        if expression.startswith("{") and expression.endswith("}"):
+            expression = expression[1:-1].strip()
+        if not expression or expression.count("(") != expression.count(")"):
+            raise ValueError("Custom Filter must be non-empty and have balanced parentheses")
+        return expression
+    if mode == "FIELDS":
+        return filter_expr(parse_filter_fields_spec(row.get("filter_fields", ""), row_issue_fields(row)))
+    if mode == "AUTO":
+        return filter_expr(auto_filter_fields(row, rows))
+    raise ValueError(f"Unsupported Filter Mode: {mode!r}")
 
 
 def row_from_issue(issue: dict[str, object], waiver_rules: dict[str, dict[str, object]]) -> dict[str, str]:
@@ -491,6 +583,7 @@ def row_from_issue(issue: dict[str, object], waiver_rules: dict[str, dict[str, o
     waiver_name = norm(str(waiver.get("Name", "")))
     rule = waiver_rules.get(waiver_name, {})
     filter_fields = rule.get("filter_fields") if isinstance(rule, dict) else None
+    has_existing_filter = isinstance(filter_fields, dict) and bool(filter_fields)
     if not isinstance(filter_fields, dict) or not filter_fields:
         filter_fields = fields_for_filter(fields)
     object_value = ""
@@ -506,6 +599,9 @@ def row_from_issue(issue: dict[str, object], waiver_rules: dict[str, dict[str, o
         "waiver_enabled": "yes" if waiver_name else "no",
         "waiver_name": waiver_name,
         "owner_comment": norm(str(waiver.get("Comment") or rule.get("comment") or "")),
+        "filter_mode": "FIELDS" if has_existing_filter else "AUTO",
+        "filter_fields": format_filter_fields_spec(filter_fields, fields) if has_existing_filter else "",
+        "custom_filter": "",
         "ip_owner": "",
         "reviewer": "",
         "reviewer_decision": "PENDING",
@@ -553,9 +649,23 @@ def similar_issue_key(row: dict[str, str]) -> tuple[str, ...]:
 
 
 def preserve_review_fields(row: dict[str, str], old: dict[str, str]) -> None:
-    for key in ["owner_action", "owner_comment", "ip_owner", "reviewer", "reviewer_decision", "reviewer_comment"]:
+    for key in [
+        "owner_action", "owner_comment",
+        "ip_owner", "reviewer", "reviewer_decision", "reviewer_comment",
+    ]:
         if old.get(key):
             row[key] = old[key]
+    old_filter_mode = norm(old.get("filter_mode")).upper()
+    old_filter_is_valid = old_filter_mode in {"AUTO", "CUSTOM"}
+    if old_filter_mode == "FIELDS":
+        try:
+            parse_filter_fields_spec(old.get("filter_fields", ""), row_issue_fields(old))
+            old_filter_is_valid = True
+        except ValueError:
+            old_filter_is_valid = False
+    if old_filter_is_valid:
+        for key in ["filter_mode", "filter_fields", "custom_filter"]:
+            row[key] = old.get(key, "")
     row["waiver_enabled"] = "yes" if row.get("owner_action", "").upper() == "WAIVED" else "no"
 
 
@@ -727,6 +837,7 @@ def sheet_xml(rows: list[list[object]], editable_headers: set[str] | None = None
     validations = []
     for column, choices in {
         "Owner Action": "UNREVIEWED,FIXED,WAIVED",
+        "Filter Mode": "AUTO,FIELDS,CUSTOM",
         "Reviewer Decision": "PENDING,APPROVED,DISAPPROVED",
     }.items():
         if column not in header or row_count <= 1:
@@ -774,7 +885,7 @@ def comments_vml(comments: list[tuple[str, str, int]]) -> str:
     shapes = []
     for shape_id, (_ref, _note, column) in enumerate(comments, start=1025):
         shapes.append(
-            f'<v:shape id="_x0000_s{shape_id}" type="#_x0000_t202" style="position:absolute;visibility:hidden" fillcolor="#ffffe1" o:insetmode="auto">'
+            f'<v:shape id="_x0000_s{shape_id}" type="#_x0000_t202" style="position:absolute;visibility:hidden;width:220pt;height:100pt" fillcolor="#ffffe1" o:insetmode="auto">'
             '<v:fill color2="#ffffe1"/><v:shadow on="t" color="black" obscured="t"/>'
             '<v:path o:connecttype="none"/><v:textbox style="mso-direction-alt:auto"><div style="text-align:left"/></v:textbox>'
             '<x:ClientData ObjectType="Note"><x:MoveWithCells/><x:SizeWithCells/>'
@@ -790,11 +901,20 @@ def comments_vml(comments: list[tuple[str, str, int]]) -> str:
     )
 
 
-def write_xlsx(path: Path, sheets: dict[str, list[list[object]]], editable_headers_by_sheet: dict[str, set[str]] | None = None) -> None:
+def write_xlsx(
+    path: Path,
+    sheets: dict[str, list[list[object]]],
+    editable_headers_by_sheet: dict[str, set[str]] | None = None,
+    cell_notes_by_sheet: dict[str, list[tuple[str, str, int]]] | None = None,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     editable_headers_by_sheet = editable_headers_by_sheet or {}
+    cell_notes_by_sheet = cell_notes_by_sheet or {}
     sheet_items = list(sheets.items())
-    comments_by_sheet = [header_comments(rows) for _name, rows in sheet_items]
+    comments_by_sheet = [
+        header_comments(rows) + cell_notes_by_sheet.get(name, [])
+        for name, rows in sheet_items
+    ]
     content_types = [
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
         '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
@@ -1169,6 +1289,9 @@ def row_from_xlsx_issue(source: dict[str, str], severity_by_tag: dict[str, str] 
         "waiver_enabled": "yes" if owner_action == "WAIVED" else "no",
         "waiver_name": norm(source.get("waiver_name")),
         "owner_comment": norm(source.get("Owner Comment") or source.get("owner_comment") or source.get("Comment") or source.get("review_comment")),
+        "filter_mode": norm(source.get("Filter Mode") or source.get("filter_mode") or "AUTO").upper(),
+        "filter_fields": norm(source.get("Filter Fields") or source.get("filter_fields")),
+        "custom_filter": (source.get("Custom Filter") or source.get("custom_filter") or "").strip(),
         "ip_owner": norm(source.get("IP Owner") or source.get("ip_owner") or source.get("Person in Charge")),
         "reviewer": norm(source.get("Reviewer") or source.get("reviewer")),
         "reviewer_decision": reviewer_decision,
@@ -1184,9 +1307,9 @@ def row_from_xlsx_issue(source: dict[str, str], severity_by_tag: dict[str, str] 
         "statement": norm(fields.get("Statement")),
         "description": norm(fields.get("Description")),
         "violation": norm(fields.get("Violation")),
-        "source_report": "full",
-        "waiver_user": "",
-        "waiver_timestamp": "",
+        "source_report": norm(source.get("source_report")) or "full",
+        "waiver_user": norm(source.get("waiver_user")),
+        "waiver_timestamp": norm(source.get("waiver_timestamp")),
         "filter_json": json.dumps(fields_for_filter(fields), ensure_ascii=False),
         "fields_json": json.dumps(fields, ensure_ascii=False),
     }
@@ -1219,53 +1342,7 @@ def read_review_workbook(path: Path) -> list[dict[str, str]]:
         for source in sheet_rows:
             if not source.get("Tag") and not source.get("issue_id"):
                 continue
-            if not source.get("issue_id"):
-                imported.append(row_from_xlsx_issue(source, severity_by_tag))
-                continue
-            try:
-                fields = json.loads(source.get("fields_json", "{}") or "{}")
-            except json.JSONDecodeError:
-                fields = {}
-            if not isinstance(fields, dict):
-                fields = {}
-            fields.update(
-                {
-                    "Tag": source.get("Tag", ""),
-                    "Description": source.get("Description", ""),
-                    "Violation": source.get("Violation", ""),
-                    "Goal": source.get("Goal", ""),
-                    "Module": source.get("Module", ""),
-                    "FileName": source.get("FileName", ""),
-                    "LineNumber": source.get("LineNumber", ""),
-                    "Statement": source.get("Statement", ""),
-                }
-            )
-            row = {col: source.get(col, "") for col in BASE_COLUMNS}
-            row.update(
-                {
-                    "ip_owner": source.get("IP Owner", source.get("ip_owner", source.get("Person in Charge", ""))),
-                    "owner_action": source.get("Owner Action", source.get("owner_action", "UNREVIEWED")),
-                    "owner_comment": source.get("Owner Comment", source.get("owner_comment", source.get("Comment", ""))),
-                    "reviewer": source.get("Reviewer", source.get("reviewer", "")),
-                    "reviewer_decision": source.get("Reviewer Decision", source.get("reviewer_decision", "PENDING")),
-                    "reviewer_comment": source.get("Reviewer Comment", source.get("reviewer_comment", "")),
-                    "tag": source.get("Tag", source.get("tag", "")),
-                    "goal": source.get("Goal", source.get("goal", "")),
-                    "module": source.get("Module", source.get("module", "")),
-                    "file": source.get("FileName", source.get("file", "")),
-                    "line": source.get("LineNumber", source.get("line", "")),
-                    "hierarchy": source.get("HIERARCHY") or source.get("DesignObjHierarchy") or source.get("hierarchy", ""),
-                    "object": source.get("Signal")
-                    or source.get("VariableName")
-                    or source.get("ModPortName")
-                    or source.get("object", ""),
-                    "statement": source.get("Statement", source.get("statement", "")),
-                    "description": source.get("Description", source.get("description", "")),
-                    "violation": source.get("Violation", source.get("violation", "")),
-                    "fields_json": json.dumps(fields, ensure_ascii=False),
-                }
-            )
-            imported.append(row)
+            imported.append(row_from_xlsx_issue(source, severity_by_tag))
     return imported
 
 
@@ -1302,6 +1379,9 @@ def row_to_tag_sheet(row: dict[str, str], columns: list[str], index: int) -> lis
         "IP Owner": row.get("ip_owner", ""),
         "Owner Action": row.get("owner_action", ""),
         "Owner Comment": row.get("owner_comment", ""),
+        "Filter Mode": row.get("filter_mode", "AUTO"),
+        "Filter Fields": row.get("filter_fields", ""),
+        "Custom Filter": row.get("custom_filter", ""),
         "Reviewer": row.get("reviewer", ""),
         "Reviewer Decision": row.get("reviewer_decision", ""),
         "Reviewer Comment": row.get("reviewer_comment", ""),
@@ -1401,6 +1481,9 @@ def row_to_report_sheet(row: dict[str, str], columns: list[str], index: int, use
         "IP Owner": row.get("ip_owner", ""),
         "Owner Action": row.get("owner_action", ""),
         "Owner Comment": row.get("owner_comment", ""),
+        "Filter Mode": row.get("filter_mode", "AUTO"),
+        "Filter Fields": row.get("filter_fields", ""),
+        "Custom Filter": row.get("custom_filter", ""),
         "Reviewer": row.get("reviewer", ""),
         "Reviewer Decision": row.get("reviewer_decision", ""),
         "Reviewer Comment": row.get("reviewer_comment", ""),
@@ -1445,6 +1528,7 @@ def export_review_workbook(rows: list[dict[str, str]], xlsx_path: Path, summary_
     summary_rows = summarize(rows)
     sheets: OrderedDict[str, list[list[object]]] = OrderedDict()
     editable_headers_by_sheet: dict[str, set[str]] = {}
+    cell_notes_by_sheet: dict[str, list[tuple[str, str, int]]] = {}
     sheets["Tree Summary"] = tree_summary_matrix(rows)
     report_headers = workbook_headers(report_excel) if report_excel else OrderedDict()
     extras_by_sheet, user_extra_values = collect_user_extra_columns(previous_excel, report_headers)
@@ -1458,6 +1542,15 @@ def export_review_workbook(rows: list[dict[str, str]], xlsx_path: Path, summary_
         columns = report_ordered_sheet_columns(tag, tag_rows, report_headers, extras_by_sheet)
         sheets[tag] = [columns] + [row_to_report_sheet(row, columns, idx, user_extra_values) for idx, row in enumerate(tag_rows, start=1)]
         editable_headers_by_sheet[tag] = {*REVIEW_SHEET_COLUMNS[1:], *extras_by_sheet.get(tag, [])}
+        if "waiver_name" in columns:
+            waiver_column = columns.index("waiver_name")
+            notes = [
+                (f"{xlsx_col_name(waiver_column)}{row_index}", row["_waiver_note"], waiver_column)
+                for row_index, row in enumerate(tag_rows, start=2)
+                if row.get("_waiver_note")
+            ]
+            if notes:
+                cell_notes_by_sheet[tag] = notes
 
     removed_rows = [row for row in rows if row.get("record_status") == "REMOVED"]
     if removed_rows:
@@ -1474,7 +1567,7 @@ def export_review_workbook(rows: list[dict[str, str]], xlsx_path: Path, summary_
         ["User-added columns are preserved for human notes but ignored by vc_waiver.tcl generation."],
         ["This workbook is the review source of truth."],
     ]
-    write_xlsx(xlsx_path, sheets, editable_headers_by_sheet)
+    write_xlsx(xlsx_path, sheets, editable_headers_by_sheet, cell_notes_by_sheet)
     preserve_workbook_drawings(previous_excel, xlsx_path)
     if summary_path:
         write_csv(summary_path, summary_rows, ["record_status", "owner_action", "tag", "count"])
@@ -1499,26 +1592,36 @@ def generate_waiver_from_rows(rows: list[dict[str, str]], output_path: Path, use
     duplicate_waiver_names = {
         name for name, count in Counter(row.get("waiver_name", "").strip() for row in eligible_rows if row.get("waiver_name", "").strip()).items() if count > 1
     }
-    used_names: set[str] = set()
+    for row in rows:
+        row.pop("_waiver_note", None)
+    grouped_rows: OrderedDict[tuple[str, str, str], list[dict[str, str]]] = OrderedDict()
     for row in eligible_rows:
-        if row.get("record_status") == "REMOVED":
-            continue
-        name = generated_waiver_name(row, duplicate_waiver_names, used_names)
         try:
-            filter_fields = json.loads(row.get("filter_json", "{}") or "{}")
-        except json.JSONDecodeError:
-            filter_fields = {}
-        if not isinstance(filter_fields, dict) or not filter_fields:
-            try:
-                fields = json.loads(row.get("fields_json", "{}") or "{}")
-            except json.JSONDecodeError:
-                fields = {}
-            filter_fields = fields_for_filter(fields if isinstance(fields, dict) else {})
-        comment = row.get("owner_comment", "")
-        tag = row.get("tag", "")
-        out_user = user or row.get("waiver_user") or os.getenv("USERNAME") or ""
-        timestamp = row.get("waiver_timestamp") or "N/A"
-        filter_part = f" -filter {{{filter_expr(filter_fields)}}} " if should_emit_filter(row) and filter_fields else " "
+            filter_expression = waiver_filter_expression(row, rows)
+        except ValueError as error:
+            issue = row.get("issue_id") or row.get("waiver_name") or "unknown issue"
+            raise ValueError(f"Invalid waiver filter for {row.get('tag', '')}/{issue}: {error}") from error
+        signature = (row.get("tag", ""), filter_expression, row.get("owner_comment", ""))
+        grouped_rows.setdefault(signature, []).append(row)
+
+    used_names: set[str] = set()
+    for (tag, filter_expression, comment), shared_rows in grouped_rows.items():
+        primary = shared_rows[0]
+        name = generated_waiver_name(primary, duplicate_waiver_names, used_names)
+        for row in shared_rows:
+            row["waiver_name"] = name
+        if len(shared_rows) > 1:
+            primary_id = primary.get("issue_id", "")
+            shared_ids = [row.get("issue_id", "") for row in shared_rows[1:]]
+            primary["_waiver_note"] = (
+                f"Primary waiver rule shared by {len(shared_rows)} issues.\n"
+                f"Shared issue IDs: {', '.join(shared_ids)}"
+            )
+            for row in shared_rows[1:]:
+                row["_waiver_note"] = f"Shares waiver rule {name} with primary issue {primary_id}."
+        out_user = user or primary.get("waiver_user") or os.getenv("USERNAME") or ""
+        timestamp = primary.get("waiver_timestamp") or "N/A"
+        filter_part = f" -filter {{{filter_expression}}} "
         lines.append(
             f"waive_violation -add {{{tcl_escape(name)}}}  "
             f"-comment {{{tcl_escape(comment)}}} "
@@ -1602,8 +1705,13 @@ def cmd_update_review_excel(args: argparse.Namespace) -> None:
 def cmd_gen_waiver(args: argparse.Namespace) -> None:
     rows = read_review_workbook(args.excel)
     generate_waiver_from_rows(rows, args.output, args.user)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        previous_excel = Path(temp_dir) / args.excel.name
+        shutil.copy2(args.excel, previous_excel)
+        export_review_workbook(rows, args.excel, previous_excel=previous_excel)
     print(f"read {len(rows)} rows from {args.excel}")
     print(f"wrote {args.output}")
+    print(f"updated shared-waiver notes in {args.excel}")
     print("Next: run the sanity tool to refresh reports/report_lint.full.log.")
 
 
