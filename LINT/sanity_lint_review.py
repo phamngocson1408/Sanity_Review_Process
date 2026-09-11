@@ -28,12 +28,14 @@ from xml.etree import ElementTree as ET
 BASE_COLUMNS = [
     "issue_id",
     "record_status",
-    "review_status",
+    "owner_action",
     "waiver_enabled",
     "waiver_name",
-    "review_comment",
-    "owner",
-    "review_date",
+    "owner_comment",
+    "ip_owner",
+    "reviewer",
+    "reviewer_decision",
+    "reviewer_comment",
     "tag",
     "severity",
     "goal",
@@ -105,7 +107,16 @@ NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 NS_PACKAGE_REL = "http://schemas.openxmlformats.org/package/2006/relationships"
 NS_CONTENT_TYPES = "http://schemas.openxmlformats.org/package/2006/content-types"
 
-REVIEW_SHEET_COLUMNS = ["No.", "Person in Charge", "Date", "Judgment", "Comment"]
+REVIEW_SHEET_COLUMNS = [
+    "No.",
+    "IP Owner",
+    "Owner Action",
+    "Owner Comment",
+    "Reviewer",
+    "Reviewer Decision",
+    "Reviewer Comment",
+]
+LEGACY_REVIEW_SHEET_COLUMNS = ["Person in Charge", "Date", "Judgment", "Comment"]
 CORE_LINT_COLUMNS = [
     "Tag",
     "Description",
@@ -127,6 +138,34 @@ MANAGEMENT_COLUMNS = [
     "filter_json",
     "fields_json",
 ]
+WORKBOOK_MANAGEMENT_COLUMNS = [
+    column
+    for column in MANAGEMENT_COLUMNS
+    if column not in {"waiver_enabled", "filter_json", "fields_json"}
+]
+RECORD_STATUSES = {"NEW", "CHANGED", "UNCHANGED", "REMOVED"}
+HEADER_NOTES = {
+    "record_status": (
+        "NEW: the issue appears for the first time\n"
+        "CHANGED: an existing issue has changed attributes\n"
+        "UNCHANGED: the issue still exists without changes\n"
+        "REMOVED: the issue no longer appears in the current report"
+    ),
+    "source_report": (
+        "full: the issue comes from report_lint.full\n"
+        "waived: the issue comes from report_lint.waived"
+    ),
+    "Owner Action": (
+        "UNREVIEWED: the IP owner has not handled the issue\n"
+        "FIXED: the IP owner fixed the issue\n"
+        "WAIVED: the IP owner decided to waive the issue"
+    ),
+    "Reviewer Decision": (
+        "PENDING: the handling has not been reviewed\n"
+        "APPROVED: the reviewer accepts the IP owner's handling\n"
+        "DISAPPROVED: the reviewer rejects the IP owner's handling"
+    ),
+}
 
 ET.register_namespace("", NS_MAIN)
 ET.register_namespace("r", NS_REL)
@@ -196,6 +235,13 @@ def clean_generated_files(base_dir: Path, keep_waiver: bool = False, dry_run: bo
 
 def norm(value: str | None) -> str:
     return re.sub(r"\s+", " ", (value or "").strip())
+
+
+def normalize_record_status(value: str | None) -> str:
+    status = norm(value).upper()
+    if status in {"ACTIVE", "WAIVED", ""}:
+        return "UNCHANGED"
+    return status if status in RECORD_STATUSES else "UNCHANGED"
 
 
 def issue_id(fields: dict[str, str]) -> str:
@@ -452,17 +498,18 @@ def row_from_issue(issue: dict[str, object], waiver_rules: dict[str, dict[str, o
         if norm(fields.get(key)):
             object_value = norm(fields.get(key))
             break
-    record_status = "WAIVED" if str(issue.get("source_report", "")) == "waived" else "ACTIVE"
-    review_status = "WAIVED" if waiver_name else "UNREVIEWED"
+    owner_action = "WAIVED" if waiver_name else "UNREVIEWED"
     return {
         "issue_id": wid,
-        "record_status": record_status,
-        "review_status": review_status,
+        "record_status": "UNCHANGED",
+        "owner_action": owner_action,
         "waiver_enabled": "yes" if waiver_name else "no",
         "waiver_name": waiver_name,
-        "review_comment": norm(str(waiver.get("Comment") or rule.get("comment") or "")),
-        "owner": "",
-        "review_date": "",
+        "owner_comment": norm(str(waiver.get("Comment") or rule.get("comment") or "")),
+        "ip_owner": "",
+        "reviewer": "",
+        "reviewer_decision": "PENDING",
+        "reviewer_comment": "",
         "tag": norm(fields.get("Tag")),
         "severity": norm(str(issue.get("severity", ""))),
         "goal": norm(fields.get("Goal")),
@@ -506,10 +553,10 @@ def similar_issue_key(row: dict[str, str]) -> tuple[str, ...]:
 
 
 def preserve_review_fields(row: dict[str, str], old: dict[str, str]) -> None:
-    for key in ["review_status", "review_comment"]:
+    for key in ["owner_action", "owner_comment", "ip_owner", "reviewer", "reviewer_decision", "reviewer_comment"]:
         if old.get(key):
             row[key] = old[key]
-    row["waiver_enabled"] = "yes" if row.get("review_status", "").upper() in {"WAIVED", "APPROVED", "APPROVED_WAIVE"} else "no"
+    row["waiver_enabled"] = "yes" if row.get("owner_action", "").upper() == "WAIVED" else "no"
 
 
 def merge_rows(old_rows: list[dict[str, str]], current_rows: list[dict[str, str]]) -> list[dict[str, str]]:
@@ -526,9 +573,9 @@ def merge_rows(old_rows: list[dict[str, str]], current_rows: list[dict[str, str]
         row = dict(current)
         if old:
             preserve_review_fields(row, old)
-            row["record_status"] = current.get("record_status") or "ACTIVE"
+            row["record_status"] = "UNCHANGED"
             consumed_old_ids.add(old["issue_id"])
-        elif current.get("record_status") != "WAIVED":
+        else:
             similar_old = next((candidate for candidate in old_by_similar.get(similar_issue_key(current), []) if candidate.get("issue_id") not in consumed_old_ids), None)
             if similar_old:
                 preserve_review_fields(row, similar_old)
@@ -544,14 +591,14 @@ def merge_rows(old_rows: list[dict[str, str]], current_rows: list[dict[str, str]
             row["record_status"] = "REMOVED"
             merged.append(row)
 
-    status_order = {"NEW": 0, "CHANGED": 1, "ACTIVE": 2, "WAIVED": 3, "REMOVED": 4}
+    status_order = {"NEW": 0, "CHANGED": 1, "UNCHANGED": 2, "REMOVED": 3}
     return sorted(merged, key=lambda r: (status_order.get(r["record_status"], 9), r["tag"], r["module"], r["file"], int(r["line"] or 0)))
 
 
 def summarize(rows: list[dict[str, str]]) -> list[dict[str, str]]:
-    grouped = Counter((r.get("record_status", ""), r.get("review_status", ""), r.get("tag", "")) for r in rows)
+    grouped = Counter((r.get("record_status", ""), r.get("owner_action", ""), r.get("tag", "")) for r in rows)
     return [
-        {"record_status": k[0], "review_status": k[1], "tag": k[2], "count": str(count)}
+        {"record_status": k[0], "owner_action": k[1], "tag": k[2], "count": str(count)}
         for k, count in sorted(grouped.items())
     ]
 
@@ -630,10 +677,14 @@ def safe_sheet_name(name: str, used: set[str]) -> str:
     return candidate
 
 
-def sheet_xml(rows: list[list[object]], editable_headers: set[str] | None = None) -> str:
+def sheet_xml(rows: list[list[object]], editable_headers: set[str] | None = None, has_comments: bool = False) -> str:
     if not rows:
         rows = [[""]]
     editable_headers = editable_headers or set()
+    header = ["" if value is None else str(value) for value in rows[0]]
+    managed_column_indexes = {
+        index for index, column in enumerate(header) if column in WORKBOOK_MANAGEMENT_COLUMNS
+    }
     col_count = max(len(row) for row in rows)
     row_count = len(rows)
     out = [
@@ -665,41 +716,98 @@ def sheet_xml(rows: list[list[object]], editable_headers: set[str] | None = None
             cell_ref = f"{xlsx_col_name(c_idx)}{r_idx}"
             text = "" if value is None else str(value)
             style = ""
-            if r_idx == 1:
+            if r_idx == 1 and c_idx in managed_column_indexes:
+                style = ' s="3"'
+            elif r_idx == 1:
                 style_id = 1 if text in editable_headers else 2
                 style = f' s="{style_id}"'
             out.append(f'<c r="{cell_ref}"{style} t="inlineStr"><is><t xml:space="preserve">{html.escape(text)}</t></is></c>')
         out.append("</row>")
     out.extend(["</sheetData>", '<autoFilter ref="A1:{}{}"/>'.format(xlsx_col_name(col_count - 1), row_count)])
-    header = ["" if value is None else str(value) for value in rows[0]]
-    if "Judgment" in header and row_count > 1:
-        judgment_col = xlsx_col_name(header.index("Judgment"))
-        validation_range = f"{judgment_col}2:{judgment_col}{row_count}"
-        out.append(
-            '<dataValidations count="1">'
+    validations = []
+    for column, choices in {
+        "Owner Action": "UNREVIEWED,FIXED,WAIVED",
+        "Reviewer Decision": "PENDING,APPROVED,DISAPPROVED",
+    }.items():
+        if column not in header or row_count <= 1:
+            continue
+        column_name = xlsx_col_name(header.index(column))
+        validation_range = f"{column_name}2:{column_name}{row_count}"
+        validations.append(
             f'<dataValidation type="list" allowBlank="1" showDropDown="0" sqref="{validation_range}">'
-            '<formula1>"UNREVIEWED,WAIVED,APPROVED,APPROVED_WAIVE"</formula1>'
-            "</dataValidation>"
-            "</dataValidations>"
+            f'<formula1>"{choices}"</formula1></dataValidation>'
         )
+    if validations:
+        out.append(
+            f'<dataValidations count="{len(validations)}">'
+            f'{"".join(validations)}</dataValidations>'
+        )
+    if has_comments:
+        out.append('<legacyDrawing r:id="rId2"/>')
     out.append("</worksheet>")
     return "".join(out)
+
+
+def header_comments(rows: list[list[object]]) -> list[tuple[str, str, int]]:
+    if not rows:
+        return []
+    return [
+        (f"{xlsx_col_name(index)}1", HEADER_NOTES[column], index)
+        for index, value in enumerate(rows[0])
+        if (column := str(value)) in HEADER_NOTES
+    ]
+
+
+def comments_xml(comments: list[tuple[str, str, int]]) -> str:
+    items = "".join(
+        f'<comment ref="{ref}" authorId="0"><text><t xml:space="preserve">{html.escape(note)}</t></text></comment>'
+        for ref, note, _column in comments
+    )
+    return (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        f'<comments xmlns="{NS_MAIN}"><authors><author>sanity_lint_review.py</author></authors>'
+        f'<commentList>{items}</commentList></comments>'
+    )
+
+
+def comments_vml(comments: list[tuple[str, str, int]]) -> str:
+    shapes = []
+    for shape_id, (_ref, _note, column) in enumerate(comments, start=1025):
+        shapes.append(
+            f'<v:shape id="_x0000_s{shape_id}" type="#_x0000_t202" style="position:absolute;visibility:hidden" fillcolor="#ffffe1" o:insetmode="auto">'
+            '<v:fill color2="#ffffe1"/><v:shadow on="t" color="black" obscured="t"/>'
+            '<v:path o:connecttype="none"/><v:textbox style="mso-direction-alt:auto"><div style="text-align:left"/></v:textbox>'
+            '<x:ClientData ObjectType="Note"><x:MoveWithCells/><x:SizeWithCells/>'
+            f'<x:Row>0</x:Row><x:Column>{column}</x:Column></x:ClientData></v:shape>'
+        )
+    return (
+        '<xml xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" '
+        'xmlns:x="urn:schemas-microsoft-com:office:excel">'
+        '<o:shapelayout v:ext="edit"><o:idmap v:ext="edit" data="1"/></o:shapelayout>'
+        '<v:shapetype id="_x0000_t202" coordsize="21600,21600" o:spt="202" path="m,l,21600r21600,l21600,xe">'
+        '<v:stroke joinstyle="miter"/><v:path gradientshapeok="t" o:connecttype="rect"/></v:shapetype>'
+        f'{"".join(shapes)}</xml>'
+    )
 
 
 def write_xlsx(path: Path, sheets: dict[str, list[list[object]]], editable_headers_by_sheet: dict[str, set[str]] | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     editable_headers_by_sheet = editable_headers_by_sheet or {}
     sheet_items = list(sheets.items())
+    comments_by_sheet = [header_comments(rows) for _name, rows in sheet_items]
     content_types = [
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
         '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
         '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>',
         '<Default Extension="xml" ContentType="application/xml"/>',
+        '<Default Extension="vml" ContentType="application/vnd.openxmlformats-officedocument.vmlDrawing"/>',
         '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>',
         '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>',
     ]
     for idx, _ in enumerate(sheet_items, start=1):
         content_types.append(f'<Override PartName="/xl/worksheets/sheet{idx}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>')
+        if comments_by_sheet[idx - 1]:
+            content_types.append(f'<Override PartName="/xl/comments{idx}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml"/>')
     content_types.append("</Types>")
 
     workbook_sheets = [
@@ -743,18 +851,20 @@ def write_xlsx(path: Path, sheets: dict[str, list[list[object]]], editable_heade
         '<font><sz val="11"/><name val="Calibri"/></font>'
         '<font><b/><sz val="11"/><name val="Calibri"/></font>'
         '</fonts>'
-        '<fills count="4">'
+        '<fills count="5">'
         '<fill><patternFill patternType="none"/></fill>'
         '<fill><patternFill patternType="gray125"/></fill>'
         '<fill><patternFill patternType="solid"><fgColor rgb="FFC6EFCE"/><bgColor indexed="64"/></patternFill></fill>'
         '<fill><patternFill patternType="solid"><fgColor rgb="FFD9D9D9"/><bgColor indexed="64"/></patternFill></fill>'
+        '<fill><patternFill patternType="solid"><fgColor rgb="FFFFF2CC"/><bgColor indexed="64"/></patternFill></fill>'
         '</fills>'
         '<borders count="1"><border/></borders>'
         '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-        '<cellXfs count="3">'
+        '<cellXfs count="4">'
         '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
         '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'
         '<xf numFmtId="0" fontId="1" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'
+        '<xf numFmtId="0" fontId="1" fillId="4" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'
         '</cellXfs>'
         '</styleSheet>'
     )
@@ -773,7 +883,19 @@ def write_xlsx(path: Path, sheets: dict[str, list[list[object]]], editable_heade
         zf.writestr("xl/_rels/workbook.xml.rels", "".join(rels))
         zf.writestr("xl/styles.xml", styles)
         for idx, (_name, rows) in enumerate(sheet_items, start=1):
-            zf.writestr(f"xl/worksheets/sheet{idx}.xml", sheet_xml(rows, editable_headers_by_sheet.get(_name, set())))
+            comments = comments_by_sheet[idx - 1]
+            zf.writestr(f"xl/worksheets/sheet{idx}.xml", sheet_xml(rows, editable_headers_by_sheet.get(_name, set()), bool(comments)))
+            if comments:
+                sheet_rels = (
+                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                    f'<Relationships xmlns="{NS_PACKAGE_REL}">'
+                    f'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="../comments{idx}.xml"/>'
+                    f'<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing" Target="../drawings/commentsDrawing{idx}.vml"/>'
+                    '</Relationships>'
+                )
+                zf.writestr(f"xl/worksheets/_rels/sheet{idx}.xml.rels", sheet_rels)
+                zf.writestr(f"xl/comments{idx}.xml", comments_xml(comments))
+                zf.writestr(f"xl/drawings/commentsDrawing{idx}.vml", comments_vml(comments))
 
 
 def xlsx_sheet_targets(zf: zipfile.ZipFile) -> OrderedDict[str, str]:
@@ -1009,7 +1131,10 @@ def read_xlsx_first_sheet(path: Path) -> list[dict[str, str]]:
 
 
 def xlsx_row_fields(source: dict[str, str]) -> dict[str, str]:
-    ignored = set(REVIEW_SHEET_COLUMNS + MANAGEMENT_COLUMNS + ["record_status", "review_status", "review_comment"])
+    ignored = set(REVIEW_SHEET_COLUMNS + LEGACY_REVIEW_SHEET_COLUMNS + MANAGEMENT_COLUMNS + [
+        "record_status", "review_status", "review_comment", "owner_action", "owner_comment",
+        "ip_owner", "reviewer", "reviewer_decision", "reviewer_comment",
+    ])
     return {key: value for key, value in source.items() if key and key not in ignored}
 
 
@@ -1030,16 +1155,24 @@ def row_from_xlsx_issue(source: dict[str, str], severity_by_tag: dict[str, str] 
         if norm(fields.get(key)):
             object_value = norm(fields.get(key))
             break
-    review_status = norm(source.get("Judgment") or source.get("review_status") or "UNREVIEWED")
+    legacy_judgment = norm(source.get("Judgment") or source.get("review_status")).upper()
+    owner_action = norm(source.get("Owner Action") or source.get("owner_action")).upper()
+    if not owner_action:
+        owner_action = "WAIVED" if legacy_judgment in {"WAIVED", "APPROVED_WAIVE"} else "UNREVIEWED"
+    reviewer_decision = norm(source.get("Reviewer Decision") or source.get("reviewer_decision")).upper()
+    if not reviewer_decision:
+        reviewer_decision = "APPROVED" if legacy_judgment == "APPROVED" else "PENDING"
     return {
         "issue_id": wid,
-        "record_status": norm(source.get("record_status")) or "ACTIVE",
-        "review_status": review_status,
-        "waiver_enabled": "yes" if review_status.upper() in {"WAIVED", "APPROVED", "APPROVED_WAIVE"} else "no",
+        "record_status": normalize_record_status(source.get("record_status")),
+        "owner_action": owner_action,
+        "waiver_enabled": "yes" if owner_action == "WAIVED" else "no",
         "waiver_name": norm(source.get("waiver_name")),
-        "review_comment": norm(source.get("Comment") or source.get("review_comment")),
-        "owner": "",
-        "review_date": "",
+        "owner_comment": norm(source.get("Owner Comment") or source.get("owner_comment") or source.get("Comment") or source.get("review_comment")),
+        "ip_owner": norm(source.get("IP Owner") or source.get("ip_owner") or source.get("Person in Charge")),
+        "reviewer": norm(source.get("Reviewer") or source.get("reviewer")),
+        "reviewer_decision": reviewer_decision,
+        "reviewer_comment": norm(source.get("Reviewer Comment") or source.get("reviewer_comment")),
         "tag": norm(fields.get("Tag")),
         "severity": norm((severity_by_tag or {}).get(norm(fields.get("Tag")), "")),
         "goal": norm(fields.get("Goal")),
@@ -1110,10 +1243,12 @@ def read_review_workbook(path: Path) -> list[dict[str, str]]:
             row = {col: source.get(col, "") for col in BASE_COLUMNS}
             row.update(
                 {
-                    "owner": source.get("Person in Charge", source.get("owner", "")),
-                    "review_date": source.get("Date", source.get("review_date", "")),
-                    "review_status": source.get("Judgment", source.get("review_status", "")),
-                    "review_comment": source.get("Comment", source.get("review_comment", "")),
+                    "ip_owner": source.get("IP Owner", source.get("ip_owner", source.get("Person in Charge", ""))),
+                    "owner_action": source.get("Owner Action", source.get("owner_action", "UNREVIEWED")),
+                    "owner_comment": source.get("Owner Comment", source.get("owner_comment", source.get("Comment", ""))),
+                    "reviewer": source.get("Reviewer", source.get("reviewer", "")),
+                    "reviewer_decision": source.get("Reviewer Decision", source.get("reviewer_decision", "PENDING")),
+                    "reviewer_comment": source.get("Reviewer Comment", source.get("reviewer_comment", "")),
                     "tag": source.get("Tag", source.get("tag", "")),
                     "goal": source.get("Goal", source.get("goal", "")),
                     "module": source.get("Module", source.get("module", "")),
@@ -1152,7 +1287,7 @@ def tag_sheet_columns(rows: list[dict[str, str]]) -> list[str]:
             if key not in seen:
                 dynamic.append(key)
                 seen.add(key)
-    return REVIEW_SHEET_COLUMNS + dynamic + MANAGEMENT_COLUMNS
+    return REVIEW_SHEET_COLUMNS + WORKBOOK_MANAGEMENT_COLUMNS + dynamic
 
 
 def row_to_tag_sheet(row: dict[str, str], columns: list[str], index: int) -> list[str]:
@@ -1164,10 +1299,12 @@ def row_to_tag_sheet(row: dict[str, str], columns: list[str], index: int) -> lis
         fields = {}
     values = {
         "No.": str(index),
-        "Person in Charge": row.get("owner", ""),
-        "Date": row.get("review_date", ""),
-        "Judgment": row.get("review_status", ""),
-        "Comment": row.get("review_comment", ""),
+        "IP Owner": row.get("ip_owner", ""),
+        "Owner Action": row.get("owner_action", ""),
+        "Owner Comment": row.get("owner_comment", ""),
+        "Reviewer": row.get("reviewer", ""),
+        "Reviewer Decision": row.get("reviewer_decision", ""),
+        "Reviewer Comment": row.get("reviewer_comment", ""),
         "Tag": row.get("tag", ""),
         "Description": row.get("description", ""),
         "Violation": row.get("violation", ""),
@@ -1207,7 +1344,10 @@ def collect_user_extra_columns(previous_excel: Path | None, report_headers: dict
         return extras_by_sheet, values_by_issue
 
     old_sheets = read_xlsx_sheets(previous_excel)
-    ignored = set(MANAGEMENT_COLUMNS + ["record_status", "review_status", "review_comment"])
+    ignored = set(MANAGEMENT_COLUMNS + REVIEW_SHEET_COLUMNS + LEGACY_REVIEW_SHEET_COLUMNS + [
+        "record_status", "review_status", "review_comment", "owner_action", "owner_comment",
+        "ip_owner", "reviewer", "reviewer_decision", "reviewer_comment",
+    ])
     for sheet_name, rows in old_sheets.items():
         if sheet_name in {"Tree Summary", "Instructions", "Summary", "ReviewDB"} or not rows:
             continue
@@ -1233,13 +1373,20 @@ def report_ordered_sheet_columns(
     columns = list(report_headers.get(tag, []))
     if not columns:
         columns = tag_sheet_columns(tag_rows)
-    if "record_status" not in columns:
-        insert_at = columns.index("Comment") + 1 if "Comment" in columns else len(columns)
-        columns.insert(insert_at, "record_status")
+    else:
+        columns = REVIEW_SHEET_COLUMNS + [
+            column for column in columns
+            if column not in REVIEW_SHEET_COLUMNS and column not in LEGACY_REVIEW_SHEET_COLUMNS
+        ]
+
+    # Keep every script-managed column in one contiguous block immediately
+    # after the review fields. A previous workbook may contain them in a scattered order.
+    columns = [column for column in columns if column not in MANAGEMENT_COLUMNS]
     for extra in extras_by_sheet.get(tag, []):
-        if extra not in columns:
+        if extra not in columns and extra not in MANAGEMENT_COLUMNS:
             columns.append(extra)
-    return columns
+    insert_at = columns.index("Reviewer Comment") + 1 if "Reviewer Comment" in columns else len(columns)
+    return columns[:insert_at] + WORKBOOK_MANAGEMENT_COLUMNS + columns[insert_at:]
 
 
 def row_to_report_sheet(row: dict[str, str], columns: list[str], index: int, user_extra_values: dict[str, dict[str, str]]) -> list[str]:
@@ -1251,10 +1398,12 @@ def row_to_report_sheet(row: dict[str, str], columns: list[str], index: int, use
         fields = {}
     values = {
         "No.": str(index),
-        "Person in Charge": row.get("owner", ""),
-        "Date": row.get("review_date", ""),
-        "Judgment": row.get("review_status", ""),
-        "Comment": row.get("review_comment", ""),
+        "IP Owner": row.get("ip_owner", ""),
+        "Owner Action": row.get("owner_action", ""),
+        "Owner Comment": row.get("owner_comment", ""),
+        "Reviewer": row.get("reviewer", ""),
+        "Reviewer Decision": row.get("reviewer_decision", ""),
+        "Reviewer Comment": row.get("reviewer_comment", ""),
         "record_status": row.get("record_status", ""),
         "Tag": row.get("tag", ""),
         "Description": row.get("description", ""),
@@ -1280,7 +1429,7 @@ def tree_summary_matrix(rows: list[dict[str, str]]) -> list[list[str]]:
         key = (row.get("severity", ""), row.get("tag", ""))
         if key not in grouped:
             grouped[key] = {"count": 0, "waived": 0, "stage": ""}
-        if row.get("review_status", "").upper() == "WAIVED":
+        if row.get("owner_action", "").upper() == "WAIVED":
             grouped[key]["waived"] = int(grouped[key]["waived"]) + 1
         else:
             grouped[key]["count"] = int(grouped[key]["count"]) + 1
@@ -1288,7 +1437,7 @@ def tree_summary_matrix(rows: list[dict[str, str]]) -> list[list[str]]:
     for (severity, tag), counts in grouped.items():
         confirmed = int(counts["count"]) + int(counts["waived"])
         matrix.append([severity, str(counts["stage"]), tag, str(counts["count"]), str(counts["waived"]), "0", str(confirmed), str(counts["count"])])
-    matrix.append(["TOTAL", "", "", str(sum(1 for r in active if r.get("review_status", "").upper() != "WAIVED")), str(sum(1 for r in active if r.get("review_status", "").upper() == "WAIVED")), "0", str(len(active)), ""])
+    matrix.append(["TOTAL", "", "", str(sum(1 for r in active if r.get("owner_action", "").upper() != "WAIVED")), str(sum(1 for r in active if r.get("owner_action", "").upper() == "WAIVED")), "0", str(len(active)), ""])
     return matrix
 
 
@@ -1308,25 +1457,27 @@ def export_review_workbook(rows: list[dict[str, str]], xlsx_path: Path, summary_
     for tag, tag_rows in by_tag.items():
         columns = report_ordered_sheet_columns(tag, tag_rows, report_headers, extras_by_sheet)
         sheets[tag] = [columns] + [row_to_report_sheet(row, columns, idx, user_extra_values) for idx, row in enumerate(tag_rows, start=1)]
-        editable_headers_by_sheet[tag] = {"Judgment", "Comment", *extras_by_sheet.get(tag, [])}
+        editable_headers_by_sheet[tag] = {*REVIEW_SHEET_COLUMNS[1:], *extras_by_sheet.get(tag, [])}
 
     removed_rows = [row for row in rows if row.get("record_status") == "REMOVED"]
     if removed_rows:
         columns = tag_sheet_columns(removed_rows)
         sheets["Removed"] = [columns] + [row_to_tag_sheet(row, columns, idx) for idx, row in enumerate(removed_rows, start=1)]
-        editable_headers_by_sheet["Removed"] = {"Judgment", "Comment"}
+        editable_headers_by_sheet["Removed"] = set(REVIEW_SHEET_COLUMNS[1:])
 
     sheets["Instructions"] = [
         ["Sanity LINT Review Workbook"],
         ["Run make -f Makefile excel to generate report_lint.full.xlsx, then this workbook is merged from it."],
-        ["Reviewer-editable report columns are Judgment and Comment."],
+        ["IP owners edit IP Owner, Owner Action, and Owner Comment."],
+        ["Reviewers edit Reviewer, Reviewer Decision, and Reviewer Comment."],
+        ["Waiver Tcl generation depends only on Owner Action = WAIVED."],
         ["User-added columns are preserved for human notes but ignored by vc_waiver.tcl generation."],
         ["This workbook is the review source of truth."],
     ]
     write_xlsx(xlsx_path, sheets, editable_headers_by_sheet)
     preserve_workbook_drawings(previous_excel, xlsx_path)
     if summary_path:
-        write_csv(summary_path, summary_rows, ["record_status", "review_status", "tag", "count"])
+        write_csv(summary_path, summary_rows, ["record_status", "owner_action", "tag", "count"])
 
 
 def export_excel(csv_path: Path, xlsx_path: Path, summary_path: Path | None = None, report_excel: Path | None = None, previous_excel: Path | None = None) -> None:
@@ -1343,7 +1494,7 @@ def generate_waiver_from_rows(rows: list[dict[str, str]], output_path: Path, use
         row
         for row in rows
         if row.get("record_status") != "REMOVED"
-        and row.get("review_status", "").strip().upper() in {"WAIVED", "APPROVED", "APPROVED_WAIVE"}
+        and row.get("owner_action", "").strip().upper() == "WAIVED"
     ]
     duplicate_waiver_names = {
         name for name, count in Counter(row.get("waiver_name", "").strip() for row in eligible_rows if row.get("waiver_name", "").strip()).items() if count > 1
@@ -1363,7 +1514,7 @@ def generate_waiver_from_rows(rows: list[dict[str, str]], output_path: Path, use
             except json.JSONDecodeError:
                 fields = {}
             filter_fields = fields_for_filter(fields if isinstance(fields, dict) else {})
-        comment = row.get("review_comment", "")
+        comment = row.get("owner_comment", "")
         tag = row.get("tag", "")
         out_user = user or row.get("waiver_user") or os.getenv("USERNAME") or ""
         timestamp = row.get("waiver_timestamp") or "N/A"

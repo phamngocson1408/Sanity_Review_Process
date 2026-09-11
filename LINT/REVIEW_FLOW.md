@@ -15,17 +15,19 @@ This document describes the intended review loop for LINT sanity issues and waiv
 
 - Being an Excel workbook rather than plain text, it can hold the waiver decision together with rich review context (comments, extra columns, images) in one place, which `vc_waiver.tcl` alone could not carry.
 - `report_lint.full.xlsx`, the tool-generated LINT report, is merged into `lint_review.xlsx`, so reviewers and peer reviewers see decisions and their justification side by side instead of cross-checking a separate slide deck.
-- `vc_waiver.tcl` is generated from approved/waived items in `lint_review.xlsx` and used by the next sanity check run, so it is always derived from the same up-to-date source instead of drifting out of sync with a manually maintained PPT.
+- `vc_waiver.tcl` is generated from issues that the IP owner marks as `WAIVED` in `lint_review.xlsx` and used by the next sanity check run, so it is always derived from the same up-to-date source instead of drifting out of sync with a manually maintained PPT.
 
 ## Supported Features
 
 - `gen_waiver` generates `vc_waiver.tcl` from `outputs/lint_review.xlsx`.
 - `merge_excel` runs `make -f Makefile excel` and merges the refreshed `report_lint.full.xlsx` into `outputs/lint_review.xlsx`.
-- Reviewer-owned fields are limited to `Judgment`, `Comment`, and user-added columns.
+- IP-owner fields are `IP Owner`, `Owner Action`, and `Owner Comment`.
+- Reviewer fields are `Reviewer`, `Reviewer Decision`, and `Reviewer Comment`.
 - Report-owned columns are refreshed from `report_lint.full.xlsx`.
-- Header colors show ownership: green means editable, gray means report-owned.
-- Filters are enabled on each sheet, and `Judgment` provides a dropdown list.
-- Review state is tracked in the workbook with `record_status`
+- Header colors show ownership: green means editable, gray means report-owned, and pale yellow identifies script-managed metadata.
+- Filters are enabled on each sheet. `Owner Action` and `Reviewer Decision` provide dropdown lists.
+- Excel Notes on status headers describe their supported values.
+- Issue change state is tracked with `record_status`.
 
 ## Directory Layout
 
@@ -87,20 +89,35 @@ report_lint.full.xlsx
   -> export outputs/lint_review.xlsx
 ```
 
-5. Reviewer edits `outputs/lint_review.xlsx`.
+5. The IP owner handles issues in `outputs/lint_review.xlsx`.
 
-The reviewer can update these report columns:
+The IP owner updates:
 
 ```text
-Judgment
-Comment
+IP Owner
+Owner Action: UNREVIEWED / FIXED / WAIVED
+Owner Comment
 ```
 
-Green headers are user-editable. Gray headers are report-owned and should not be edited. Each sheet has filters enabled, and `Judgment` has a dropdown for supported review decisions.
+`Owner Action = WAIVED` tells the script to generate a waiver for that issue. `Owner Action = FIXED` means the IP owner resolved the issue without a waiver.
+
+6. The reviewer evaluates the IP owner's handling.
+
+The reviewer updates:
+
+```text
+Reviewer
+Reviewer Decision: PENDING / APPROVED / DISAPPROVED
+Reviewer Comment
+```
+
+The reviewer decision records peer-review results only. It does not control waiver Tcl generation.
+
+Green headers are user-editable. Gray headers are report-owned and should not be edited. Pale-yellow headers identify script-managed metadata and should not be edited manually. Each sheet has filters enabled.
 
 The reviewer may also add new columns for human notes. Those columns are preserved in `lint_review.xlsx`, but ignored by `vc_waiver.tcl` generation.
 
-6. Generate the next waiver file.
+7. Generate the next waiver file.
 
 Run:
 
@@ -114,11 +131,11 @@ This reads reviewer edits from `outputs/lint_review.xlsx`, then generates:
 vc_waiver.tcl
 ```
 
-7. Run sanity check again with the new `vc_waiver.tcl`.
+8. Run sanity check again with the new `vc_waiver.tcl`.
 
 The sanity tool creates new reports.
 
-8. Merge the refreshed report again.
+9. Merge the refreshed report again.
 
 ```powershell
 python sanity_lint_review.py merge_excel
@@ -134,33 +151,45 @@ The script merges the new reports with the previous `lint_review.xlsx`, so old c
 NEW
   The issue appears in the latest report and was not found in the previous review workbook.
 
-ACTIVE
-  The issue appears in the latest full report and already existed in the review workbook.
-
 CHANGED
   The issue no longer has the same exact issue_id, but it still looks like the same logical issue.
   Example: line number or statement changed, while tag/module/file/hierarchy/object stayed the same.
-  Previous reviewer fields are preserved and the row is marked for manual confirmation.
+  Previous IP-owner and reviewer fields are preserved and the row is marked for manual confirmation.
 
-WAIVED
-  The issue appears in the latest waived report. This means the sanity tool recognized it as waived.
+UNCHANGED
+  The issue still appears in the latest report and its identity-defining attributes have not changed.
 
 REMOVED
   The issue existed in the previous review workbook but no longer appears in the latest reports.
 ```
 
-`review_status` is imported from the Excel `Judgment` column.
+`Owner Action` records the IP owner's handling decision.
 
 ```text
 UNREVIEWED
-  No review decision yet.
+  The IP owner has not handled the issue yet.
+
+FIXED
+  The IP owner fixed the issue without a waiver.
 
 WAIVED
-  Reviewer intends this issue to be waived.
-
-APPROVED / APPROVED_WAIVE
-  Also treated as waiver-approved by the generator.
+  The IP owner decided to waive the issue. This value enables waiver Tcl generation.
 ```
+
+`Reviewer Decision` records the independent peer-review result.
+
+```text
+PENDING
+  The handling has not been reviewed yet.
+
+APPROVED
+  The reviewer accepts the IP owner's handling.
+
+DISAPPROVED
+  The reviewer rejects the IP owner's handling.
+```
+
+`Reviewer Decision` does not affect waiver Tcl generation.
 
 ## How Review Memory Is Preserved
 
@@ -181,11 +210,11 @@ When reports are parsed again, the script compares new issues with the existing 
 
 ```text
 same issue_id
-  -> keep previous reviewer fields
+  -> keep previous IP-owner and reviewer fields
   -> update report-derived fields
 
 similar issue key
-  -> keep previous reviewer fields
+  -> keep previous IP-owner and reviewer fields
   -> mark as CHANGED
 
 new issue_id
@@ -195,11 +224,15 @@ old issue_id not found in current reports
   -> mark as REMOVED
 ```
 
-Reviewer fields preserved during merge:
+Human-entered fields preserved during merge:
 
 ```text
-review_status
-review_comment
+IP Owner
+Owner Action
+Owner Comment
+Reviewer
+Reviewer Decision
+Reviewer Comment
 ```
 
 ## Waiver Generation
@@ -208,8 +241,10 @@ The script generates `vc_waiver.tcl` from rows where:
 
 ```text
 record_status != REMOVED
-Judgment in WAIVED / APPROVED / APPROVED_WAIVE
+Owner Action = WAIVED
 ```
+
+The reviewer decision is deliberately not part of this condition. Waiver Tcl is generated from the IP owner's decision, even when `Reviewer Decision` is `PENDING` or `DISAPPROVED`.
 
 The generated Tcl follows the GUI-style waiver file:
 
@@ -262,6 +297,8 @@ generates:
 ## Redundant Waiver Review
 
 `outputs/waiver_rule_audit.csv` compares the current `vc_waiver.tcl` with the latest waived report.
+
+The `ACTIVE` value below belongs only to the waiver-rule audit. It is not a `record_status` value.
 
 ```text
 ACTIVE

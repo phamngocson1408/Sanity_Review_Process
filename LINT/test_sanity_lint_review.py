@@ -1,7 +1,20 @@
 import unittest
+import tempfile
+import zipfile
 from pathlib import Path
 
-from sanity_lint_review import filter_expr, parse_filter, parse_waiver_tcl
+from sanity_lint_review import (
+    WORKBOOK_MANAGEMENT_COLUMNS,
+    filter_expr,
+    generate_waiver_from_rows,
+    merge_rows,
+    normalize_record_status,
+    parse_filter,
+    parse_waiver_tcl,
+    report_ordered_sheet_columns,
+    sheet_xml,
+    write_xlsx,
+)
 
 
 class WaiverFilterTests(unittest.TestCase):
@@ -24,6 +37,113 @@ class WaiverFilterTests(unittest.TestCase):
         self.assertEqual(fields["PropertyList:LintPropertyName"], "Property_142")
         self.assertNotIn("LintPropertyName", fields)
         self.assertEqual(parse_filter(filter_expr(fields)), fields)
+
+
+class WorkbookColumnTests(unittest.TestCase):
+    def test_script_managed_columns_are_grouped_after_review_fields(self):
+        report_headers = {
+            "W551": ["No.", "issue_id", "Comment", "record_status", "Tag"]
+        }
+        extras = {"W551": ["Reviewer Note", "waiver_name"]}
+
+        columns = report_ordered_sheet_columns("W551", [], report_headers, extras)
+
+        self.assertEqual(
+            columns,
+            [
+                "No.", "IP Owner", "Owner Action", "Owner Comment", "Reviewer",
+                "Reviewer Decision", "Reviewer Comment", *WORKBOOK_MANAGEMENT_COLUMNS,
+                "Tag", "Reviewer Note",
+            ],
+        )
+        self.assertNotIn("waiver_enabled", columns)
+        self.assertNotIn("filter_json", columns)
+        self.assertNotIn("fields_json", columns)
+
+    def test_only_script_managed_headers_have_pale_yellow_style(self):
+        rows = [
+            ["Comment", *WORKBOOK_MANAGEMENT_COLUMNS, "Tag"],
+            ["note", *(["value"] * len(WORKBOOK_MANAGEMENT_COLUMNS)), "W551"],
+        ]
+
+        xml = sheet_xml(rows)
+
+        self.assertEqual(xml.count(' s="3"'), len(WORKBOOK_MANAGEMENT_COLUMNS))
+        self.assertNotIn(' s="4"', xml)
+
+    def test_status_headers_have_excel_notes(self):
+        rows = [
+            ["Owner Action", "Reviewer Decision", "record_status", "source_report", "Tag"],
+            ["UNREVIEWED", "PENDING", "NEW", "full", "W551"],
+        ]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "review.xlsx"
+            write_xlsx(path, {"W551": rows})
+
+            with zipfile.ZipFile(path) as workbook:
+                comments = workbook.read("xl/comments1.xml").decode("utf-8")
+                sheet = workbook.read("xl/worksheets/sheet1.xml").decode("utf-8")
+
+        self.assertIn("NEW: the issue appears for the first time", comments)
+        self.assertIn("full: the issue comes from report_lint.full", comments)
+        self.assertIn("WAIVED: the IP owner decided to waive", comments)
+        self.assertIn("DISAPPROVED: the reviewer rejects", comments)
+        self.assertIn('<legacyDrawing r:id="rId2"/>', sheet)
+
+
+class RecordStatusTests(unittest.TestCase):
+    @staticmethod
+    def row(issue_id, line="1", status="UNCHANGED", object_name=None):
+        return {
+            "issue_id": issue_id,
+            "record_status": status,
+            "owner_action": "UNREVIEWED",
+            "reviewer_decision": "PENDING",
+            "tag": "W551",
+            "goal": "LINT",
+            "module": "top",
+            "file": "top.sv",
+            "line": line,
+            "hierarchy": "top",
+            "object": object_name or issue_id,
+        }
+
+    def test_legacy_active_and_waived_statuses_become_unchanged(self):
+        self.assertEqual(normalize_record_status("ACTIVE"), "UNCHANGED")
+        self.assertEqual(normalize_record_status("WAIVED"), "UNCHANGED")
+
+    def test_merge_uses_only_four_record_statuses(self):
+        old_rows = [self.row("same"), self.row("changed", line="2"), self.row("removed", line="3")]
+        current_rows = [
+            self.row("same", status="WAIVED"),
+            self.row("new"),
+            self.row("replacement", line="2", object_name="changed"),
+        ]
+
+        merged = merge_rows(old_rows, current_rows)
+        statuses = {row["issue_id"]: row["record_status"] for row in merged}
+
+        self.assertEqual(statuses["same"], "UNCHANGED")
+        self.assertEqual(statuses["replacement"], "CHANGED")
+        self.assertEqual(statuses["new"], "NEW")
+        self.assertEqual(statuses["removed"], "REMOVED")
+
+    def test_waiver_generation_depends_only_on_owner_action(self):
+        row = self.row("waive")
+        row.update({
+            "owner_action": "WAIVED",
+            "reviewer_decision": "DISAPPROVED",
+            "waiver_name": "W551_test",
+            "owner_comment": "Owner waiver reason",
+            "fields_json": '{"Tag": "W551"}',
+            "filter_json": "{}",
+        })
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "waiver.tcl"
+            generate_waiver_from_rows([row], output)
+            generated = output.read_text(encoding="utf-8")
+
+        self.assertIn("W551_test", generated)
 
 
 if __name__ == "__main__":
