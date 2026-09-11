@@ -11,6 +11,7 @@ import argparse
 import csv
 import hashlib
 import html
+import io
 import json
 import os
 import posixpath
@@ -442,12 +443,24 @@ def parse_filter(filter_text: str) -> OrderedDict[str, str]:
     # VC waiver filters observed in the sample are simple AND-ed comparisons.
     pattern = re.compile(r'\(?\s*([A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)*)\s*(==|=~)\s*"((?:\\.|[^"])*)"\s*\)?')
     for key, _op, value in pattern.findall(filter_text):
-        fields[key] = value.replace('\\"', '"')
+        fields[key] = re.sub(r'\\([\\{}"])', r'\1', value)
     return fields
 
 
 def tcl_escape(value: str) -> str:
     return value.replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}")
+
+
+def tcl_double_quote(value: str) -> str:
+    return (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("$", "\\$")
+        .replace("[", "\\[")
+        .replace("]", "\\]")
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+    )
 
 
 def filter_expr(filter_fields: dict[str, str]) -> str:
@@ -458,7 +471,10 @@ def filter_expr(filter_fields: dict[str, str]) -> str:
         if key == "LintPropertyName":
             key = "PropertyList:LintPropertyName"
         op = "=~" if "*" in value or "?" in value else "=="
-        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+        escaped = (
+            value.replace("\\", "\\\\")
+            .replace('"', '\\"')
+        )
         parts.append(f'({key} {op} "{escaped}")')
     return " AND ".join(parts)
 
@@ -510,14 +526,27 @@ def row_issue_fields(row: dict[str, str]) -> dict[str, str]:
 
 def parse_filter_fields_spec(spec: str, fields: dict[str, str]) -> OrderedDict[str, str]:
     result: OrderedDict[str, str] = OrderedDict()
-    for item in (part.strip() for part in spec.split(",")):
+    parsed_items = next(csv.reader([spec], skipinitialspace=True), [])
+    items: list[str] = []
+    field_name_pattern = r"[A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)*"
+    for raw_item in parsed_items:
+        item = raw_item.strip()
+        possible_key = item.split("=", 1)[0].strip()
+        starts_field = bool(re.fullmatch(field_name_pattern, possible_key))
+        if starts_field or not items:
+            items.append(item)
+        else:
+            # Compatibility with old generated specs whose override values
+            # contained unquoted commas, especially Statement values.
+            items[-1] = f"{items[-1]}, {item}"
+    for item in (part.strip() for part in items):
         if not item:
             continue
         if "=" in item:
             key, value = (part.strip() for part in item.split("=", 1))
         else:
             key, value = item, norm(fields.get(item))
-        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)*", key):
+        if not re.fullmatch(field_name_pattern, key):
             raise ValueError(f"Invalid filter field name: {key!r}")
         if not value:
             raise ValueError(f"Filter field {key!r} has no value")
@@ -531,7 +560,9 @@ def format_filter_fields_spec(filter_fields: dict[str, str], fields: dict[str, s
     items = []
     for key, value in filter_fields.items():
         items.append(key if norm(fields.get(key)) == norm(value) else f"{key}={value}")
-    return ", ".join(items)
+    output = io.StringIO()
+    csv.writer(output, lineterminator="").writerow(items)
+    return output.getvalue()
 
 
 def auto_filter_fields(row: dict[str, str], rows: list[dict[str, str]]) -> OrderedDict[str, str]:
@@ -599,9 +630,9 @@ def row_from_issue(issue: dict[str, object], waiver_rules: dict[str, dict[str, o
         "waiver_enabled": "yes" if waiver_name else "no",
         "waiver_name": waiver_name,
         "owner_comment": norm(str(waiver.get("Comment") or rule.get("comment") or "")),
-        "filter_mode": "FIELDS" if has_existing_filter else "AUTO",
-        "filter_fields": format_filter_fields_spec(filter_fields, fields) if has_existing_filter else "",
-        "custom_filter": "",
+        "filter_mode": "CUSTOM" if has_existing_filter else "AUTO",
+        "filter_fields": "",
+        "custom_filter": filter_expr(filter_fields) if has_existing_filter else "",
         "ip_owner": "",
         "reviewer": "",
         "reviewer_decision": "PENDING",
@@ -1621,7 +1652,7 @@ def generate_waiver_from_rows(rows: list[dict[str, str]], output_path: Path, use
                 row["_waiver_note"] = f"Shares waiver rule {name} with primary issue {primary_id}."
         out_user = user or primary.get("waiver_user") or os.getenv("USERNAME") or ""
         timestamp = primary.get("waiver_timestamp") or "N/A"
-        filter_part = f" -filter {{{filter_expression}}} "
+        filter_part = f' -filter "{tcl_double_quote(filter_expression)}" '
         lines.append(
             f"waive_violation -add {{{tcl_escape(name)}}}  "
             f"-comment {{{tcl_escape(comment)}}} "
@@ -1705,13 +1736,19 @@ def cmd_update_review_excel(args: argparse.Namespace) -> None:
 def cmd_gen_waiver(args: argparse.Namespace) -> None:
     rows = read_review_workbook(args.excel)
     generate_waiver_from_rows(rows, args.output, args.user)
-    with tempfile.TemporaryDirectory() as temp_dir:
-        previous_excel = Path(temp_dir) / args.excel.name
-        shutil.copy2(args.excel, previous_excel)
-        export_review_workbook(rows, args.excel, previous_excel=previous_excel)
+    workbook_updated = False
+    try:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            previous_excel = Path(temp_dir) / args.excel.name
+            shutil.copy2(args.excel, previous_excel)
+            export_review_workbook(rows, args.excel, previous_excel=previous_excel)
+            workbook_updated = True
+    except PermissionError:
+        print(f"warning: could not update shared-waiver notes because {args.excel} is open or locked")
     print(f"read {len(rows)} rows from {args.excel}")
     print(f"wrote {args.output}")
-    print(f"updated shared-waiver notes in {args.excel}")
+    if workbook_updated:
+        print(f"updated shared-waiver notes in {args.excel}")
     print("Next: run the sanity tool to refresh reports/report_lint.full.log.")
 
 

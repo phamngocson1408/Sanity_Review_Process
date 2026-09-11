@@ -1,11 +1,13 @@
 import unittest
 import tempfile
+import tkinter
 import zipfile
 from pathlib import Path
 
 from sanity_lint_review import (
     WORKBOOK_MANAGEMENT_COLUMNS,
     filter_expr,
+    format_filter_fields_spec,
     generate_waiver_from_rows,
     merge_rows,
     normalize_record_status,
@@ -14,6 +16,7 @@ from sanity_lint_review import (
     parse_waiver_tcl,
     report_ordered_sheet_columns,
     sheet_xml,
+    tcl_double_quote,
     waiver_filter_expression,
     write_xlsx,
 )
@@ -32,6 +35,23 @@ class WaiverFilterTests(unittest.TestCase):
             filter_expr({"LintPropertyName": "Property_142"}),
             '(PropertyList:LintPropertyName == "Property_142")',
         )
+
+    def test_braces_in_filter_values_keep_the_original_statement(self):
+        fields = {"Statement": "r_rdata <= {truncated ..."}
+
+        expression = filter_expr(fields)
+
+        self.assertIn("{truncated", expression)
+        self.assertEqual(parse_filter(expression), fields)
+
+    def test_tcl_double_quote_preserves_filter_value(self):
+        expression = '(Statement == "r_rdata <= {data[3:0], $value ...")'
+        interpreter = tkinter.Tcl()
+        interpreter.eval('proc capture {value} {set ::captured $value}')
+
+        interpreter.eval(f'capture "{tcl_double_quote(expression)}"')
+
+        self.assertEqual(interpreter.eval('set ::captured'), expression)
 
     def test_original_w551_filter(self):
         rules = parse_waiver_tcl(Path(__file__).with_name("vc_waiver.tcl_ori"))
@@ -151,13 +171,29 @@ class RecordStatusTests(unittest.TestCase):
             generated = output.read_text(encoding="utf-8")
 
         self.assertIn("W551_test", generated)
-        self.assertIn('-filter {(Module =~ "top_*")}', generated)
+        self.assertIn(r'-filter "(Module =~ \"top_*\")"', generated)
 
     def test_filter_fields_support_row_values_and_wildcards(self):
         fields = {"Goal": "LINT", "Module": "top"}
         selected = parse_filter_fields_spec("Goal, Module=axi_*", fields)
 
         self.assertEqual(filter_expr(selected), '(Goal == "LINT") AND (Module =~ "axi_*")')
+
+    def test_filter_fields_override_can_contain_commas(self):
+        fields = {"Statement": "original"}
+        expected = {"Statement": "r_data <= {a, b};"}
+        spec = format_filter_fields_spec(expected, fields)
+
+        self.assertEqual(parse_filter_fields_spec(spec, fields), expected)
+
+    def test_legacy_unquoted_override_with_commas_is_supported(self):
+        fields = {"Goal": "LINT"}
+        spec = "Goal, Statement=r_data <= {a, b};, Signal=sig"
+
+        selected = parse_filter_fields_spec(spec, fields)
+
+        self.assertEqual(selected["Statement"], "r_data <= {a, b};")
+        self.assertEqual(selected["Signal"], "sig")
 
     def test_identical_waiver_rules_are_emitted_once_and_marked(self):
         first = self.row("first")
