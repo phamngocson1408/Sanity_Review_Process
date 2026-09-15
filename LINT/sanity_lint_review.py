@@ -270,8 +270,8 @@ def norm(value: str | None) -> str:
 
 
 def filter_value(field: str, value: str | None) -> str:
-    """Normalize filter values except whitespace-sensitive source statements."""
-    return (value or "") if field == "Statement" else norm(value)
+    """Normalize filter values while preserving whitespace inside statements."""
+    return (value or "").strip() if field == "Statement" else norm(value)
 
 
 def normalize_record_status(value: str | None) -> str:
@@ -509,10 +509,17 @@ def filter_expr(filter_fields: dict[str, str]) -> str:
         # Repair those saved filters when exporting as well.
         if key == "LintPropertyName":
             key = "PropertyList:LintPropertyName"
-        # '*' and '?' are common RTL operators inside Statement values, not
-        # wildcard intent.  Statements must match the report text exactly;
-        # users can still request pattern matching explicitly in Custom Filter.
-        op = "==" if key == "Statement" else ("=~" if "*" in value or "?" in value else "==")
+        if key == "Statement":
+            # Report indentation is not stable enough for an exact match.
+            # Match the trimmed statement anywhere in the reported text.
+            value = value.strip()
+            if not value.startswith("*"):
+                value = f"*{value}"
+            if not value.endswith("*"):
+                value = f"{value}*"
+            op = "=~"
+        else:
+            op = "=~" if "*" in value or "?" in value else "=="
         escaped = (
             value.replace("\\", "\\\\")
             .replace('"', '\\"')

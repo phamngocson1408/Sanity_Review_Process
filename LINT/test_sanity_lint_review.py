@@ -47,7 +47,7 @@ class WaiverFilterTests(unittest.TestCase):
         expression = filter_expr(fields)
 
         self.assertIn("{truncated", expression)
-        self.assertEqual(parse_filter(expression), fields)
+        self.assertEqual(parse_filter(expression), {"Statement": "*r_rdata <= {truncated ...*"})
 
     def test_tcl_double_quote_preserves_filter_value(self):
         expression = '(Statement == "r_rdata <= {data[3:0], $value ...")'
@@ -68,7 +68,9 @@ class WaiverFilterTests(unittest.TestCase):
         fields = rules["W551_837"]["filter_fields"]
         self.assertEqual(fields["PropertyList:LintPropertyName"], "Property_142")
         self.assertNotIn("LintPropertyName", fields)
-        self.assertEqual(parse_filter(filter_expr(fields)), fields)
+        expected = fields.copy()
+        expected["Statement"] = "*unique casez (r_st)*"
+        self.assertEqual(parse_filter(filter_expr(fields)), expected)
 
 
 class WorkbookColumnTests(unittest.TestCase):
@@ -286,10 +288,16 @@ class RecordStatusTests(unittest.TestCase):
 
         self.assertEqual(filter_expr(selected), '(Goal == "LINT") AND (Module =~ "axi_*")')
 
-    def test_statement_rtl_operators_do_not_enable_pattern_matching(self):
+    def test_statement_is_trimmed_and_wrapped_with_wildcards(self):
         self.assertEqual(
-            filter_expr({"Statement": "assign y = select ? a * b : c;"}),
-            '(Statement == "assign y = select ? a * b : c;")',
+            filter_expr({"Statement": "   assign y = select ? a * b : c;   "}),
+            '(Statement =~ "*assign y = select ? a * b : c;*")',
+        )
+
+    def test_statement_does_not_duplicate_existing_edge_wildcards(self):
+        self.assertEqual(
+            filter_expr({"Statement": "*assign y = a;*"}),
+            '(Statement =~ "*assign y = a;*")',
         )
 
     def test_filter_fields_override_can_contain_commas(self):
@@ -343,7 +351,7 @@ class RecordStatusTests(unittest.TestCase):
             '(Goal == "LINT") AND (Module == "top") AND (Signal == "sig_a")',
         )
 
-    def test_auto_filter_preserves_statement_indentation_exactly(self):
+    def test_auto_filter_replaces_statement_indentation_with_wildcards(self):
         first = self.row("first")
         second = self.row("second")
         first["fields_json"] = json.dumps({
@@ -355,7 +363,7 @@ class RecordStatusTests(unittest.TestCase):
 
         expression = waiver_filter_expression(first, [first, second])
 
-        self.assertIn('(Statement == "        if (enable) begin")', expression)
+        self.assertIn('(Statement =~ "*if (enable) begin*")', expression)
 
     def test_auto_filter_excludes_filename_and_line_number(self):
         row = self.row("single")
