@@ -28,6 +28,10 @@ from typing import Iterable
 from xml.etree import ElementTree as ET
 
 
+DEFAULT_WAIVER_USER = "sanity_lint_review"
+OWNED_WAIVER_FILENAME = "vc_waiver.tcl"
+
+
 BASE_COLUMNS = [
     "issue_id",
     "record_status",
@@ -54,6 +58,7 @@ BASE_COLUMNS = [
     "description",
     "violation",
     "source_report",
+    "waiver_source_file",
     "waiver_user",
     "waiver_timestamp",
     "filter_json",
@@ -145,6 +150,7 @@ MANAGEMENT_COLUMNS = [
     "waiver_enabled",
     "waiver_name",
     "source_report",
+    "waiver_source_file",
     "waiver_user",
     "waiver_timestamp",
     "filter_json",
@@ -263,6 +269,11 @@ def norm(value: str | None) -> str:
     return re.sub(r"\s+", " ", (value or "").strip())
 
 
+def filter_value(field: str, value: str | None) -> str:
+    """Normalize filter values except whitespace-sensitive source statements."""
+    return (value or "") if field == "Statement" else norm(value)
+
+
 def normalize_record_status(value: str | None) -> str:
     status = norm(value).upper()
     if status in {"ACTIVE", "WAIVED", ""}:
@@ -331,7 +342,7 @@ def parse_report(path: Path, source_report: str) -> list[dict[str, object]]:
         kv = kv_re.match(raw)
         if kv:
             key = kv.group(1).strip()
-            value = kv.group(2).rstrip()
+            value = kv.group(2) if key == "Statement" else kv.group(2).rstrip()
             if key == "Tag":
                 flush()
                 current = OrderedDict()
@@ -349,7 +360,8 @@ def parse_report(path: Path, source_report: str) -> list[dict[str, object]]:
         if current is not None and current_key and raw.startswith(" ") and raw.strip():
             target = current_waiver if in_waiver else current
             if target is not None:
-                target[current_key] = f"{target.get(current_key, '')}\n{raw.rstrip()}"
+                continuation = raw if current_key == "Statement" else raw.rstrip()
+                target[current_key] = f"{target.get(current_key, '')}\n{continuation}"
 
     flush()
 
@@ -463,6 +475,33 @@ def tcl_double_quote(value: str) -> str:
     )
 
 
+def tcl_braced_filter(value: str) -> str:
+    """Make a filter safe inside one outer Tcl braced word.
+
+    Balanced braces are retained to match VC's GUI-generated format.  Only
+    unmatched braces (commonly introduced by a truncated Statement ending in
+    ``...``) are escaped so they cannot consume the remainder of the file.
+    """
+    stack: list[int] = []
+    unmatched_closes: set[int] = set()
+    escaped = False
+    for index, char in enumerate(value):
+        if escaped:
+            escaped = False
+            continue
+        if char == "\\":
+            escaped = True
+        elif char == "{":
+            stack.append(index)
+        elif char == "}":
+            if stack:
+                stack.pop()
+            else:
+                unmatched_closes.add(index)
+    unmatched = set(stack) | unmatched_closes
+    return "".join(("\\" + char) if index in unmatched else char for index, char in enumerate(value))
+
+
 def filter_expr(filter_fields: dict[str, str]) -> str:
     parts = []
     for key, value in filter_fields.items():
@@ -470,7 +509,10 @@ def filter_expr(filter_fields: dict[str, str]) -> str:
         # Repair those saved filters when exporting as well.
         if key == "LintPropertyName":
             key = "PropertyList:LintPropertyName"
-        op = "=~" if "*" in value or "?" in value else "=="
+        # '*' and '?' are common RTL operators inside Statement values, not
+        # wildcard intent.  Statements must match the report text exactly;
+        # users can still request pattern matching explicitly in Custom Filter.
+        op = "==" if key == "Statement" else ("=~" if "*" in value or "?" in value else "==")
         escaped = (
             value.replace("\\", "\\\\")
             .replace('"', '\\"')
@@ -510,7 +552,7 @@ def generated_waiver_name(row: dict[str, str], duplicate_waiver_names: set[str],
 def fields_for_filter(fields: dict[str, str]) -> OrderedDict[str, str]:
     result: OrderedDict[str, str] = OrderedDict()
     for key in FILTER_PRIORITY:
-        value = norm(fields.get(key))
+        value = filter_value(key, fields.get(key))
         if value:
             result[key] = value
     return result
@@ -545,7 +587,7 @@ def parse_filter_fields_spec(spec: str, fields: dict[str, str]) -> OrderedDict[s
         if "=" in item:
             key, value = (part.strip() for part in item.split("=", 1))
         else:
-            key, value = item, norm(fields.get(item))
+            key, value = item, filter_value(item, fields.get(item))
         if not re.fullmatch(field_name_pattern, key):
             raise ValueError(f"Invalid filter field name: {key!r}")
         if not value:
@@ -559,7 +601,7 @@ def parse_filter_fields_spec(spec: str, fields: dict[str, str]) -> OrderedDict[s
 def format_filter_fields_spec(filter_fields: dict[str, str], fields: dict[str, str]) -> str:
     items = []
     for key, value in filter_fields.items():
-        items.append(key if norm(fields.get(key)) == norm(value) else f"{key}={value}")
+        items.append(key if filter_value(key, fields.get(key)) == filter_value(key, value) else f"{key}={value}")
     output = io.StringIO()
     csv.writer(output, lineterminator="").writerow(items)
     return output.getvalue()
@@ -573,13 +615,13 @@ def auto_filter_fields(row: dict[str, str], rows: list[dict[str, str]]) -> Order
     ]
     selected: OrderedDict[str, str] = OrderedDict()
     for key in AUTO_FILTER_PRIORITY:
-        value = norm(fields.get(key))
+        value = filter_value(key, fields.get(key))
         if not value:
             continue
         selected[key] = value
         matches = [
             candidate for candidate in candidates
-            if all(norm(row_issue_fields(candidate).get(name)) == expected for name, expected in selected.items())
+            if all(filter_value(name, row_issue_fields(candidate).get(name)) == expected for name, expected in selected.items())
         ]
         if len(matches) == 1:
             return selected
@@ -645,10 +687,11 @@ def row_from_issue(issue: dict[str, object], waiver_rules: dict[str, dict[str, o
         "line": norm(fields.get("LineNumber")),
         "hierarchy": norm(fields.get("HIERARCHY") or fields.get("DesignObjHierarchy")),
         "object": object_value,
-        "statement": norm(fields.get("Statement")),
+        "statement": fields.get("Statement", ""),
         "description": norm(fields.get("Description")),
         "violation": norm(fields.get("Violation")),
         "source_report": str(issue.get("source_report", "")),
+        "waiver_source_file": norm(str(waiver.get("Filename", ""))),
         "waiver_user": norm(str(rule.get("user", ""))) if isinstance(rule, dict) else "",
         "waiver_timestamp": norm(str(rule.get("timestamp", ""))) if isinstance(rule, dict) else "",
         "filter_json": json.dumps(filter_fields, ensure_ascii=False),
@@ -660,12 +703,23 @@ def collect_current_rows(full_report: Path, waived_report: Path | None, waiver_t
     waiver_rules = parse_waiver_tcl(waiver_tcl) if waiver_tcl else {}
     issues = parse_report(full_report, "full")
     if waived_report and waived_report.exists():
-        issues.extend(parse_report(waived_report, "waived"))
+        waived_issues = parse_report(waived_report, "waived")
+        issues.extend(
+            issue for issue in waived_issues
+            if waiver_filename(issue).lower() == OWNED_WAIVER_FILENAME.lower()
+        )
     rows_by_id: dict[str, dict[str, str]] = {}
     for issue in issues:
         row = row_from_issue(issue, waiver_rules)
         rows_by_id[row["issue_id"]] = row
     return sorted(rows_by_id.values(), key=lambda r: (r["tag"], r["module"], r["file"], int(r["line"] or 0)))
+
+
+def waiver_filename(issue: dict[str, object]) -> str:
+    waiver = issue.get("waiver") or {}
+    if not isinstance(waiver, dict):
+        return ""
+    return norm(str(waiver.get("Filename", ""))).replace("\\", "/").rsplit("/", 1)[-1]
 
 
 def similar_issue_key(row: dict[str, str]) -> tuple[str, ...]:
@@ -1335,10 +1389,11 @@ def row_from_xlsx_issue(source: dict[str, str], severity_by_tag: dict[str, str] 
         "line": norm(fields.get("LineNumber")),
         "hierarchy": norm(fields.get("HIERARCHY") or fields.get("DesignObjHierarchy")),
         "object": object_value,
-        "statement": norm(fields.get("Statement")),
+        "statement": fields.get("Statement", ""),
         "description": norm(fields.get("Description")),
         "violation": norm(fields.get("Violation")),
         "source_report": norm(source.get("source_report")) or "full",
+        "waiver_source_file": norm(source.get("waiver_source_file")),
         "waiver_user": norm(source.get("waiver_user")),
         "waiver_timestamp": norm(source.get("waiver_timestamp")),
         "filter_json": json.dumps(fields_for_filter(fields), ensure_ascii=False),
@@ -1619,6 +1674,11 @@ def generate_waiver_from_rows(rows: list[dict[str, str]], output_path: Path, use
         for row in rows
         if row.get("record_status") != "REMOVED"
         and row.get("owner_action", "").strip().upper() == "WAIVED"
+        and (
+            not norm(row.get("waiver_source_file"))
+            or norm(row.get("waiver_source_file")).replace("\\", "/").rsplit("/", 1)[-1].lower()
+            == OWNED_WAIVER_FILENAME.lower()
+        )
     ]
     duplicate_waiver_names = {
         name for name, count in Counter(row.get("waiver_name", "").strip() for row in eligible_rows if row.get("waiver_name", "").strip()).items() if count > 1
@@ -1636,6 +1696,7 @@ def generate_waiver_from_rows(rows: list[dict[str, str]], output_path: Path, use
         grouped_rows.setdefault(signature, []).append(row)
 
     used_names: set[str] = set()
+    generated_timestamp = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
     for (tag, filter_expression, comment), shared_rows in grouped_rows.items():
         primary = shared_rows[0]
         name = generated_waiver_name(primary, duplicate_waiver_names, used_names)
@@ -1650,9 +1711,26 @@ def generate_waiver_from_rows(rows: list[dict[str, str]], output_path: Path, use
             )
             for row in shared_rows[1:]:
                 row["_waiver_note"] = f"Shares waiver rule {name} with primary issue {primary_id}."
-        out_user = user or primary.get("waiver_user") or os.getenv("USERNAME") or ""
-        timestamp = primary.get("waiver_timestamp") or "N/A"
-        filter_part = f' -filter "{tcl_double_quote(filter_expression)}" '
+        saved_user = norm(primary.get("waiver_user"))
+        saved_timestamp = norm(primary.get("waiver_timestamp"))
+        out_user = (
+            norm(user)
+            or (saved_user if saved_user.upper() != "N/A" else "")
+            or norm(os.getenv("USERNAME"))
+            or DEFAULT_WAIVER_USER
+        )
+        timestamp = (
+            saved_timestamp
+            if saved_timestamp and saved_timestamp.upper() != "N/A"
+            else generated_timestamp
+        )
+        for row in shared_rows:
+            row["waiver_user"] = out_user
+            row["waiver_timestamp"] = timestamp
+        # VC SpyGlass emits filters as Tcl braced words.  A quoted word is not
+        # equivalent here: Tcl performs command/variable substitution inside
+        # double quotes, and the LINT waiver reader expects the GUI format.
+        filter_part = f" -filter {{{tcl_braced_filter(filter_expression)}}} "
         lines.append(
             f"waive_violation -add {{{tcl_escape(name)}}}  "
             f"-comment {{{tcl_escape(comment)}}} "

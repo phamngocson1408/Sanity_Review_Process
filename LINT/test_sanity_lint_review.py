@@ -2,6 +2,9 @@ import unittest
 import tempfile
 import tkinter
 import zipfile
+import os
+import json
+from unittest.mock import patch
 from pathlib import Path
 
 from sanity_lint_review import (
@@ -9,6 +12,7 @@ from sanity_lint_review import (
     filter_expr,
     format_filter_fields_spec,
     generate_waiver_from_rows,
+    collect_current_rows,
     merge_rows,
     normalize_record_status,
     parse_filter_fields_spec,
@@ -16,6 +20,7 @@ from sanity_lint_review import (
     parse_waiver_tcl,
     report_ordered_sheet_columns,
     sheet_xml,
+    tcl_braced_filter,
     tcl_double_quote,
     waiver_filter_expression,
     write_xlsx,
@@ -52,6 +57,11 @@ class WaiverFilterTests(unittest.TestCase):
         interpreter.eval(f'capture "{tcl_double_quote(expression)}"')
 
         self.assertEqual(interpreter.eval('set ::captured'), expression)
+
+    def test_tcl_braced_filter_escapes_only_unmatched_braces(self):
+        self.assertEqual(tcl_braced_filter('a {b} c'), 'a {b} c')
+        self.assertEqual(tcl_braced_filter('a {b ...'), r'a \{b ...')
+        self.assertEqual(tcl_braced_filter('a b} ...'), r'a b\} ...')
 
     def test_original_w551_filter(self):
         rules = parse_waiver_tcl(Path(__file__).with_name("vc_waiver.tcl_ori"))
@@ -171,13 +181,116 @@ class RecordStatusTests(unittest.TestCase):
             generated = output.read_text(encoding="utf-8")
 
         self.assertIn("W551_test", generated)
-        self.assertIn(r'-filter "(Module =~ \"top_*\")"', generated)
+        self.assertIn('-filter {(Module =~ "top_*")}', generated)
+
+    def test_waiver_generation_supplies_default_user_and_timestamp(self):
+        row = self.row("waive")
+        row.update({
+            "owner_action": "WAIVED",
+            "owner_comment": "Reason",
+            "filter_mode": "CUSTOM",
+            "custom_filter": '(Module == "top")',
+            "waiver_user": "",
+            "waiver_timestamp": "N/A",
+        })
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "waiver.tcl"
+            with patch.dict(os.environ, {"USERNAME": ""}):
+                generate_waiver_from_rows([row], output)
+            generated = output.read_text(encoding="utf-8")
+
+        self.assertIn("-user { sanity_lint_review }", generated)
+        self.assertRegex(
+            generated,
+            r"-timestamp \{ \d{2}-\d{2}-\d{4} \d{2}:\d{2}:\d{2} \}",
+        )
+        self.assertEqual(row["waiver_user"], "sanity_lint_review")
+        self.assertNotEqual(row["waiver_timestamp"], "N/A")
+
+    def test_items_owned_by_another_waiver_file_are_never_generated(self):
+        row = self.row("external-waiver")
+        row.update({
+            "owner_action": "WAIVED",
+            "tag": "RTL_PRAGMA",
+            "waiver_source_file": "rtl_pragma_waiver.tcl",
+            "owner_comment": "Do not export this item",
+            "filter_mode": "CUSTOM",
+            "custom_filter": '(Module == "top")',
+        })
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "waiver.tcl"
+            generate_waiver_from_rows([row], output)
+            generated = output.read_text(encoding="utf-8")
+
+        self.assertNotIn("waive_violation -add", generated)
+        self.assertNotIn("RTL_PRAGMA", generated)
+
+    def test_collect_current_rows_keeps_only_waivers_from_vc_waiver_tcl(self):
+        report_template = """  W551  (0 warnings/2 waived)
+  -----------------------------------------------------------------------------
+  Tag                 : W551
+  Violation           : Lint:{number}
+  Module              : top
+  LineNumber          : {number}
+  Goal                : LINT
+  Waiver
+    Name              : W551_{number}
+    Filename          : {filename}
+    State             : Waived
+  -----------------------------------------------------------------------------
+"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            full_report = temp / "full.log"
+            waived_report = temp / "waived.log"
+            full_report.write_text("", encoding="utf-8")
+            waived_report.write_text(
+                report_template.format(number=1, filename="vc_waiver.tcl")
+                + report_template.format(number=2, filename="rtl_pragma_waiver.tcl"),
+                encoding="utf-8",
+            )
+            rows = collect_current_rows(full_report, waived_report, None)
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["violation"], "Lint:1")
+        self.assertEqual(rows[0]["waiver_source_file"], "vc_waiver.tcl")
+
+    def test_waiver_filter_uses_gui_braced_format_and_preserves_braces(self):
+        row = self.row("waive")
+        expression = '(Statement == "r_data <= {a, b};")'
+        row.update({
+            "owner_action": "WAIVED",
+            "owner_comment": "Reason",
+            "filter_mode": "CUSTOM",
+            "custom_filter": expression,
+            "fields_json": '{"Tag":"W551"}',
+        })
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "waiver.tcl"
+            generate_waiver_from_rows([row], output)
+            generated = output.read_text(encoding="utf-8")
+
+        self.assertIn(
+            '-filter {(Statement == "r_data <= {a, b};")}',
+            generated,
+        )
+        interpreter = tkinter.Tcl()
+        interpreter.eval('proc waive_violation {args} {set ::waiver_args $args}')
+        interpreter.eval(generated)
+        args = interpreter.splitlist(interpreter.eval('set ::waiver_args'))
+        self.assertEqual(args[args.index("-filter") + 1], expression)
 
     def test_filter_fields_support_row_values_and_wildcards(self):
         fields = {"Goal": "LINT", "Module": "top"}
         selected = parse_filter_fields_spec("Goal, Module=axi_*", fields)
 
         self.assertEqual(filter_expr(selected), '(Goal == "LINT") AND (Module =~ "axi_*")')
+
+    def test_statement_rtl_operators_do_not_enable_pattern_matching(self):
+        self.assertEqual(
+            filter_expr({"Statement": "assign y = select ? a * b : c;"}),
+            '(Statement == "assign y = select ? a * b : c;")',
+        )
 
     def test_filter_fields_override_can_contain_commas(self):
         fields = {"Statement": "original"}
@@ -229,6 +342,20 @@ class RecordStatusTests(unittest.TestCase):
             expression,
             '(Goal == "LINT") AND (Module == "top") AND (Signal == "sig_a")',
         )
+
+    def test_auto_filter_preserves_statement_indentation_exactly(self):
+        first = self.row("first")
+        second = self.row("second")
+        first["fields_json"] = json.dumps({
+            "Goal": "LINT", "Module": "top", "Statement": "        if (enable) begin",
+        })
+        second["fields_json"] = json.dumps({
+            "Goal": "LINT", "Module": "top", "Statement": "    if (other) begin",
+        })
+
+        expression = waiver_filter_expression(first, [first, second])
+
+        self.assertIn('(Statement == "        if (enable) begin")', expression)
 
     def test_auto_filter_excludes_filename_and_line_number(self):
         row = self.row("single")
