@@ -1,0 +1,246 @@
+****************************************
+Report : rule
+Version: X-2025.06-SP2-1-DEV-20260116
+Date   : Tue Sep 15 10:56:25 2026
+****************************************
+
+Rule          Severity  Status    Message
+------------------------------------------------------------------------------
+B2T_CAS_0001  error     enabled   Pin 'top_pin' in top instance has case value that is missing in block design. Case source details: source in 'case_source', constant type 'constant_type'
+B2T_CAS_0002  error     enabled   Pin or port 'blk_pin_port' in block design has case value that is missing in top instance 
+B2T_CAS_0003  error     enabled   Pin 'top_pin' in top instance and corresponding pin or port 'blk_pin_port' in block design have different case values. Top case source details : source in 'top_case_source', constant type 'top_constant_type'. Block case source Details : constant type 'block_constant_type'. 
+B2T_CLK_0001  error     enabled   Clock 'clock' in top instance has no matching clock in block design 
+B2T_CLK_0002  error     enabled   Clock 'clock' defined in block design has no matching clock in top instance 
+B2T_CLK_0003  error     enabled   Clock 'top_clock' in top instance does not match with clock  'blk_clock' in block design
+B2T_CLK_0004  error     enabled   Pin 'top_pin' has clock sense applied in top instance but the clock sense is not applied in block design.
+B2T_CLK_0005  error     enabled   Pin 'block_pin' has clock sense applied in block design but the clock sense is not applied in top instance.
+B2T_CLK_0006  error     enabled   Clock sense applied to pin 'top_pin' in top instance does not match with clock sense applied to pin 'block_pin'in block design.
+B2T_CLK_0007  error     enabled   'arc_sense' arc from 'from_top_pin' to 'to_top_pin' has clock sense applied in top instance but the clock sense is not applied in block design.
+B2T_CLK_0008  error     enabled   'arc_sense' arc from 'from_block_pin' to 'to_block_pin' has clock sense applied in block design but the clock sense is not applied in top instance.
+B2T_CLK_0010  error     enabled   Clock gating check applied to 'object_type' 'object' in top instance is missing in block design.
+B2T_CLK_0011  error     enabled   Clock gating check applied to 'object_type' 'object' in block design is missing in top instance.
+B2T_CLK_0012  error     enabled   Clock gating check applied to 'top_object_type' 'top_object' in top instance does not match with clock gating check applied to 'blk_object_type' 'blk_object' in block design.
+B2T_CLK_0013  warning   enabled   Clock types of clock 'top_clock' in top instance and clock 'blk_clock' in block design do not match.
+B2T_CLK_0014  warning   disabled  Clock 'blk_clock' is unused in instance 'blk_inst'.
+B2T_CLT_0001  error     enabled   'constraint' applied to 'object_type' 'object' in top design is missing in block design.
+B2T_CLT_0002  error     enabled   'constraint' applied to 'object_type' 'object' in block design is missing in top design.
+B2T_CLT_0003  error     enabled   'constraint' applied to 'top_object_type' 'top_object' in top design does not match the one applied to 'blk_object_type' 'blk_object' in block design.
+B2T_DER_0001  error     enabled   Timing Derate is specified on 'object' in top design but not in block design
+B2T_DER_0002  error     enabled   Timing derate is specified on instance 'object' in block design but not in top instance
+B2T_DER_0003  error     enabled   The 'object_type' 'object' has incompatible derate specification in top instance and block design
+B2T_DIS_0001  error     enabled   'object_type' 'object' is disabled in top instance but not in block design, 'flr'
+B2T_DIS_0002  error     enabled   'object_type' 'object' is disabled in block design but not in top instance, 'flr'
+B2T_DIS_0003  error     enabled   Some timing arc(s) from 'from_object' to 'to_object' is (are) disabled in top instance but not in block design, 'flr'
+B2T_DIS_0004  error     enabled   Some timing arc(s) from 'from_object' to 'to_object' is (are) disabled in block design but not in top instance, 'flr'
+B2T_EXC_0001  error     enabled   Exception 'exception' in top instance is missing in block design
+B2T_EXC_0002  error     enabled   Exception 'exception' in block design is missing in top instance
+B2T_EXC_0003  error     enabled   Exception 'top_exception' in top instance does not match with exception 'blk_exception' in block design
+B2T_EXD_0001  error     enabled   'top_pin' in top instance has 'input_or_output' delay constraints that are missing in block level in the 'corners' corner 'flr'
+B2T_EXD_0002  error     enabled   'blk_port' in block design has 'input_or_output' delay constraints that are missing in top instance in the 'corners' corner 'flr'
+B2T_EXD_0003  error     enabled   'top_pin' in top instance and 'blk_port' in block design have different 'input_or_output' delay constraints 'flr_top', 'flr_blk'
+B2T_MTR_0001  warning   enabled   'top_pin_port' in top design has max transition that is missing in block level port or pin connected to it
+B2T_MTR_0002  warning   enabled   'blk_pin_port' in block design has max transition that is missing in the top level port connected to it 
+B2T_MTR_0003  warning   enabled   'top_pin_port' in top design and 'block_pin_port' in block design have different max transition values
+B2T_MTR_0004  warning   enabled   'top_clock' in top design has max transition that is missing on block level clock
+B2T_MTR_0005  warning   enabled   'blk_clock' in block design has max transition that is missing on the top level clock 
+B2T_MTR_0006  warning   enabled   'top_clock' in top design and 'block_clock' in block design have different max transition values
+B2T_OPC_0001  error     enabled   An operating condition is specified on instance 'object' in top instance but not in block design
+B2T_OPC_0002  error     enabled   An operating condition is specified on instance 'object' in block design but not in top instance
+B2T_OPC_0003  error     enabled   The 'object_type' 'object' has incompatible operating condition specification in top instance and block design
+B2T_OPC_0004  error     enabled   The top design and block design have incompatible operating condition analysis types
+B2T_TRL_0001  warning   enabled   'top_port' in top design has 'transition_or_load' constraint that is missing in block level port connected to it
+B2T_TRL_0002  warning   enabled   'blk_port' in block design has 'transition_or_load' constraint that is missing in the top level port connected to it
+B2T_TRL_0003  info      enabled   'top_port' in top design and 'block_port' in block design have different 'transition_or_load' constraint
+B2T_UNC_0001  error     enabled   Clock uncertainty applied to 'object_type' 'object' in top instance is missing in block instance, 'flr'
+B2T_UNC_0002  error     enabled   Clock uncertainty applied to 'object_type' 'object' in block instance is missing in top instance, 'flr'
+B2T_UNC_0003  error     enabled   Clock uncertainty applied to 'top_object_type' 'top_object' in top instance 'top_flr' , does not match the clock uncertainty setting on 'blk_object_type' 'blk_object' in the block instance, 'blk_flr'.
+B2T_UNC_0004  error     enabled   Clock uncertainty applied between 'from_clock' and 'to_clock' in top instance is missing in block instance. 'top_flr'
+B2T_UNC_0005  error     enabled   Clock uncertainty applied between 'from_clock' and 'to_clock' in block instance is missing in top instance. 'blk_flr'
+B2T_UNC_0006  error     enabled   Clock uncertainty applied between 'top_from_clock' and 'top_to_clock' in top instance 'top_flr' , does not match the clock uncertainty applied between 'blk_from_clock' and 'blk_to_clock' in block instance 'blk_flr'.
+CAP_0001      error     disabled  Output/inout port 'port' has zero or incomplete capacitance values.
+CAP_0002      error     enabled   Port 'port' has negative 'pin_or_wire' capacitance values.
+CAP_0003      warning   enabled   Port 'port' has inconsistent 'pin_or_wire' capacitance values.
+CAP_0004      warning   disabled  The capacitance constraint on 'object_type' 'object' is larger than the maximum capacitance design rule.
+CAP_0005      warning   disabled  The set_max_capacitance constraint on 'object_type' 'object' is larger than the maximum capacitance design rule in the library.
+CAS_0001      error     enabled    'pin_or_port' fans out to inconsistent user case analysis settings.
+CAS_0002      error     enabled   Pin/Port 'pin' is driven by conflicting values. A value of zero will be used. 
+CAS_0003      error     enabled   Pin/Port 'pin' propagated value of type 'constant_type' with value 'constant_value' conflicts with the user set constraint of value 'user_constant_value'.
+CAS_0004      error     enabled   Bidirectional pin 'pin' has conflicting values on the load and driver side.
+CGR_0001      error     enabled   Clocks generated from the same master clock 'master_clock' are declared as asynchronous.
+CGR_0002      error     enabled   Clock 'clock1' is generated directly from the clock 'clock2'.  They should not be declared as asynchronous.
+CGR_0003      error     enabled   Clock 'clock1' and clock 'clock2' are defined asynchronous with each other. There are clocks generated directly or indirectly from these clocks which are not defined as asynchronous.
+CGR_0004      error     enabled   Clock 'clock1' is missing an asynchronous definition with at least one clock in each of the following asynchronous clock pairs
+CGR_0005      error     enabled   Clock 'clock1' is generated directly or indirectly from the clock 'clock2'.  They should not be declared as physically exclusive.
+CGR_0006      warning   enabled   Clock 'clock1' and clock 'clock2' are defined physically exclusive with each other. There are clocks generated from these clocks which are not defined as physically exclusive.
+CGR_0007      warning   enabled   Multiple clocks are defined or external delay is specified along with clock definition at pin/port 'pin_port'.  These clocks should be defined as exclusive/asynchronous. For external delays reference clocks and the defined clocks should be exclusive/asynchronous.
+CGR_0008      warning   enabled   Multiple clocks defined at pin/port 'pin_port' have false path set between them.  For accurate signal integrity results use 'set_clock_groups -physically_exclusive'.
+CGR_0009      error     enabled   Clocks 'clock1' and 'clock2' have valid timing paths between them, but their common base period is more than the limit times the clock period.
+CGR_0010      error     enabled   Clocks 'clock1' and 'clock2' might be interacting but their common base period is more than the limit times the clock period.
+CGR_0011      warning   disabled  There are valid timing paths in the common domain of clock pair, 'clock1'and 'clock2'which are logically exclusive due to mux 'mux'.However there is no clock group defined on the clock pair
+CGR_0012      error     disabled  Clock 'clock1' is generated from clock 'clock2' and they have set_clock_group/set_false_path applied between them. 
+CGR_0013      error     disabled  Clock 'clock1' and clock 'clock2' is generated from clock 'masterclock' and they have timing path, when one generated clock has exclusivity with master clock, there should not be clock exclusivity between those two generated clocks 
+CGR_0014      error     disabled  Clock 'clock1' is used for input delay of ports, it has path with register clock 'clock2' while clock exclusivity is defined between them. 
+CGR_0015      error     disabled  Clock 'clock1' is used for output delay of ports, it has path with register clock 'clock2' while clock exclusivity is defined between them. 
+CGR_0018      error     enabled   Clock 'clock1' is generated indirectly from the clock 'clock2'.  They should not be declared as asynchronous.
+CLK_0001      warning   enabled   Clock 'clock' has 'count' source(s) on inout ports
+CLK_0002      warning   enabled   Generated clock 'clock' has 'count' source(s) on input or inout ports.Generated clock has 'src_latency' source latency cone.
+CLK_0003      error     enabled   Generated clock 'clock' is not expanded because it has no clock reaching its master source 'pin'.
+CLK_0004      warning   enabled   Mismatch between generated clock definitions at 'pin_or_port' and potential master clocks.
+CLK_0005      info      enabled   Virtual clock 'clock' has the same name as a design object.
+CLK_0006      warning   enabled   Clock 'clock' source 'source' has a logic constant or case value.
+CLK_0007      error     enabled   Generated clock 'clock' master source 'source' has a logic constant or case value.
+CLK_0008      warning   enabled   Generated clock 'clock' has paths from the source(s) of master clock 'master_clock' to generated clock source(s) with differing sequential depth.
+CLK_0009      error     enabled   Generated clock 'clock' is not expanded because master clock 'master_clock' does not reach its master source 'pin'.
+CLK_0010      error     enabled   Generated clock 'clock' is not expanded because its master clock 'master_clock' is not expanded.
+CLK_0011      error     enabled   Generated clock 'clock' is not expanded because potential master clock 'master_clock' is not expanded.
+CLK_0012      warning   enabled   Generated clock 'clock' has non-unate sense for master clock 'master_clock' at its master source.
+CLK_0013      error     enabled   Generated clock 'clock' ignores multiple rising edges of master clock 'master_clock' due to a user-defined duty cycle in the generated clock definition.
+CLK_0014      info      disabled  Clock 'clock' is created on a pin instead of a port.
+CLK_0015      warning   enabled   Clock 'clock' is created on a hierarchical pin.
+CLK_0016      error     enabled   Generated clock 'clock' has no source latency path from its master clock 'master_clock'.
+CLK_0017      error     enabled   The master source of generated clock 'clock' is not in the fanin of the generated clock source pin.
+CLK_0018      warning   enabled   Clock 'clock' has non-unate logic in the clock network.
+CLK_0019      warning   enabled   Design has both propagated and ideal non-virtual clocks.
+CLK_0020      error     enabled   Generated clock 'clock' has edge relationships with its master clock 'master_clock' that can not be satisfied.  Only paths with 'path_sense' sense exist from the master clock to source pin 'source_pin'. A 'expected_sense' sense is expected.
+CLK_0021      info      disabled  Clock 'clock' is not used in this scenario.
+CLK_0023      warning   enabled   There are 'count' clocks on source 'source' with the same period and waveform.
+CLK_0024      warning   enabled   Register Clock pin 'pin' has 'count' clocks.
+CLK_0026      warning   enabled   Clock 'clock' is used as data.  One or more sources of the clock fans out to a register data pin or to a constrained primary output or inout port.
+CLK_0027      error     enabled   At 'pin', there is a conflicting set_clock_sense for 'clock'.
+CLK_0028      warning   enabled   The master clock for generated clock 'clock' is ambiguous. There are multiple clocks on -source pin 'master_source'.
+CLK_0029      warning   enabled   The last edge shift value for generated clock 'clock' is not equal to the first edge shift.
+CLK_0030      warning   enabled   There is reconvergent logic in the network for clock 'clock'.
+CLK_0031      warning   enabled   The waveform for clock 'clock' has more than two edges.
+CLK_0032      error     enabled   Non-combinational generated clock 'clock' has a source identical to its master source object.
+CLK_0033      error     disabled  Clock 'clock' has ideal latency during post-layout analysis.
+CLK_0034      error     enabled   Clock 'clock' has propagated latency during pre-layout analysis.
+CLK_0035      warning   enabled   No clock-gating check inferred for the instance: 'cell' clock pin: 'clk_pin' enable pin: 'enable_pin' lib cell: 'lib_cell' clk name: 'clk_name'
+CLK_0036      warning   enabled   Generated clock 'clock'(file:'gclk_flr') has possibly incorrect waveform inversion with its master clock 'master_clock'(file:'mclk_flr')that may not be satisfied in some cases.
+CLK_0037      warning   enabled   There are other clock sources in the clock latency path from the source(s) of master clock 'master_clock' to the source(s) of generated clock 'gen_clock'
+CLK_0038      error     disabled  The source latency path of the generated clock 'clock' is crossing block boundaries 
+CLK_0039      error     enabled   The generated clock 'genClockA' forms a loop with following generated clocks 'genClockB'.
+CLK_0040      warning   enabled   The clocks 'clock1' and 'clock2' have a conflicting clock definition on the same net.
+CLK_0041      warning   enabled   The clock 'clock' has a loop in the source latency network.
+CLK_0042      error     enabled   The user-applied case analysis on 'term'overlaps with clock propagation.
+CLK_0043      warning   enabled   Creation of clock 'clock' blocks the propagation of clocks reaching 'oConn'.
+CLK_0049      info      disabled  The create_generated_clock definition is missing '-add and -master_clock' option for generated clock 'clock' .
+CLK_0050      warning   enabled   There is reconvergent logic in the network for clock 'clock' at pin 'pin'.
+CMP_0001      warning   disabled  Command ''command'' is unsupported by 'products'.  Command used in 'N' locations.
+CMP_0002      warning   disabled  Option '-'option'' of command ''command'' is unsupported by 'products'. Option used in 'N' locations.
+CMP_0003      warning   disabled  Application variable, sh_command_abbrev_mode is not set to the recommended value of 'Command-Line-Only'.
+CNL_0001      warning   enabled   Inconsistent clock network latency values on 'object_type' 'object'.
+CNL_0002      warning   enabled   Input/Output delays are defined relative to clock 'clock'. This clock has incomplete network latency values required for those external delays even though its source ports/pins have more complete network latencies defined on them.
+CNL_0003      warning   enabled   Clock network latency is specified on 'object_type' 'object' but that object is not in any clock network
+CNL_0004      warning   enabled   Clock network latency is specified on 'object_type' 'object' with respect to clock 'clock' but that object is not in the clock's network
+CNL_0005      warning   disabled  All register clock pins in the fanout of 'object' have no clock latency for clock 'clock'.
+CSL_0001      warning   enabled   Inconsistent clock source latency values on 'object_type' 'object'.
+CSL_0002      warning   enabled   Input/Output delays are defined relative to clock 'clock'. This clock has incomplete source latency values required for those external delays even though its source ports/pins have more complete source latencies defined on them.
+CSL_0003      warning   enabled   Clock source latency is specified on 'object_type' 'object' but that object is not a clock source
+CSL_0004      warning   enabled   Generated clock 'clock' master clock 'master_clock'is not propagated and has zero or incomplete source latency values.
+CSL_0005      warning   enabled   Generated clock 'clock' has source latency values less than that of master clock 'master_clock' when the clock edge relationships are considered.
+CSL_0006      warning   enabled   Clock source latency is specified on 'object_type' 'object' with respect to clock 'clock' but that object is not in the clock's network
+CSL_0007      warning   enabled   Source Latency defined on pin/port 'pin/port' will overwrite the clock source latency for clock 'clock' .
+CTR_0001      warning   enabled   Clock 'clock' has inconsistent clock transition values.
+CTR_0002      warning   enabled   Clock 'clock' has incomplete clock transition values.
+CTR_0003      warning   enabled   Propagated clock 'clock' has ideal clock transition values.
+CTR_0004      warning   enabled   Virtual clock 'clock' has clock transition values.
+CTR_0005      warning   disabled  Clock 'clock' has no clock transition values in pre-layout.
+CTR_0006      warning   enabled   Clock 'clock' has clock transition values in post-layout.
+DES_0001      warning   enabled   Register clock pin 'pin' has no clock signal propagating to it
+DES_0002      warning   disabled  All checks on the register clock pin 'pin' are disabled due to 'reason'
+DES_0003      warning   enabled   The register clock pin 'pin' that is part of a generated clock source latency path does not receive a valid clock signal
+DES_0004      warning   enabled   Register clock pin 'pin' has no clock signal that can sensitize the register
+DRV_0001      warning   disabled  Input/inout port 'port' has no input transition or driving cell or drive resistance specified.
+DRV_0002      warning   enabled   Input/inout port 'port' has incomplete input transition or driving cell or drive resistance specified.
+DRV_0003      warning   disabled  Input/inout port 'port' has input transition or drive resistance instead of set_driving_cell.
+DRV_0004      warning   enabled   Input or inout port 'port' has inconsistent drive resistance values.
+DRV_0005      warning   enabled   Input/inout port 'port' has inconsistent input transition values.
+EXC_0001      error     enabled   A 'exception' has conflicting 'rise_or_fall' and 'to_rise_or_fall' options specified.
+EXC_0002      warning   enabled   A 'exception' has some invalid start and/or end points specified.
+EXC_0003      warning   enabled   All -from objects for a 'exception' are invalid path startpoints.
+EXC_0004      warning   enabled   All -to objects for a 'exception' are invalid.
+EXC_0005      error     enabled   A 'exception' will create startpoints or endpoints and break other timing paths through those pins.
+EXC_0006      warning   enabled   A 'exception' does not specify any valid paths.
+EXC_0007      warning   enabled   A 'exception' has incomplete values.
+EXC_0008      error     enabled   A 'exception' is forcing start and/or end points, breaking the clock network.
+EXC_0009      warning   enabled   Inconsistent 'exception'; min_delay must be less than max_delay.
+EXC_0010      info      disabled  A 'exception' has no corresponding min_delay for a max_delay exception.
+EXC_0011      info      disabled  A 'exception' has no corresponding max_delay for a min_delay exception.
+EXC_0012      info      disabled  A 'exception' has incomplete values.
+EXC_0013      info      enabled   A 'exception' has incomplete values.
+EXC_0014      warning   enabled   A 'exception' is fully overridden by other exceptions.
+EXC_0015      info      disabled  A 'exception' is partially overridden by other exceptions.
+EXC_0016      warning   disabled  A 'exception' is clocked by clocks with different waveform and no start or end point is specified. 
+EXC_0017      warning   disabled  A 'exception' only covers setup or hold.
+EXC_0018      warning   disabled  A 'exception' only covers setup or hold.
+EXC_0019      warning   disabled  A 'false_path' between source synchronous clocks 
+EXD_0001      warning   enabled   Input/inout port 'port' has no input delay specified.
+EXD_0002      warning   enabled   Input/inout port 'port' has no clock-related input delay specified.
+EXD_0003      warning   enabled   Output/inout port 'port' has no clock-related output delay specified.
+EXD_0004      warning   enabled   The 'input_or_output' delay on 'object_type' 'object' has incomplete values.
+EXD_0007      warning   enabled   No clock signals exist at reference pin 'reference_pin'  for 'input_or_output' delay on 'object_type' 'object'.
+EXD_0008      warning   enabled   The 'input_or_output' delay at pin 'object' is forcing a 'start_or_end' point that blocks paths through this pin
+EXD_0009      warning   enabled   The input delay at 'object_type' 'object' has values larger than 'max_percent'% of the relative clock's period.
+EXD_0010      warning   enabled   The output delay at 'object_type' 'object' has values larger than 'max_percent'% of the relative clock's period.
+EXD_0011      warning   enabled   Some ports have no input delay or input delay without a relative clock.  A default clock will be assumed for such ports because the variable 'timing_input_port_default_clock' is set to 'true'.
+EXD_0012      error     disabled  The input delay at 'object_type' 'object' has zero window for min and max values.
+EXD_0013      warning   enabled   The output delay at 'object_type' 'object' has inconsistent values.
+EXD_0014      warning   disabled  The input/output delay set on the combinational path from 'from_object_type' 'from_object' to 'to_object_type' 'to_object' is incorrect.
+EXD_0015      warning   enabled   The input delay at 'object_type' 'object' has inconsistent values.
+HIER_001      warning   enabled   Hierarchical pin 'pin' has constraint 'constraint' defined on 'flr'.
+LOOP_001      warning   enabled   Arc from pin 'from_pin' to 'to_pin' is disabled due to combinational loop.
+LOOP_002      warning   disabled  Arc from pin'from_pin' to 'to_pin' belongs to a sequential loop.
+NTL_0001      warning   enabled   Output port 'port' is unbuffered.
+NTL_0002      error     enabled   Net 'net' has both strong and three-state drivers.
+NTL_0003      warning   enabled   Net 'net' has potentially invalid multiple strong drivers.
+NTL_0004      warning   enabled   Net 'net' is a top-level feedthrough.
+NTL_0005      warning   enabled   Unresolved reference to 'reference_name'.
+NTL_0006      warning   enabled   Net 'net' has high fanout; fanout count is 'fanout_count'.
+OPN_0001      warning   disabled  The constraint 'constraint' set on 'object_type' 'object' has incomplete 'options' options.
+PRF_0001      warning   disabled  There are 'count' clock pins with more than 'limit' clocks.
+S2S_CAS_0001  error     enabled   Pin/Port 'pin_port' in constraint set 'scenario1' has case value that is missing in constraint set 'scenario2'.
+S2S_CAS_0003  error     enabled   Pin/Port 'pin_port' has different case values between the constraint set 'scenario1' and constraint set 'scenario2'.
+S2S_CLK_0001  error     enabled   Clock 'clock' in constraint set 'scenario1' has no matching clock in constraint set 'scenario2'
+S2S_CLK_0003  error     enabled   Clock 'clock1' in constraint set 'scenario1' does not match with clock  'clock2' in constraint set 'scenario2'
+S2S_CLK_0004  error     enabled   Pin 'object' has clock sense applied to clock 'clock' in constraint set 'scenario1' that is missing in constraint set 'scenario2'.
+S2S_CLK_0006  error     enabled   Clock sense applied to pin 'object' in constraint set 'scenario1' does not match the clock sense applied in constraint set 'scenario2'.
+S2S_CLK_0007  error     enabled   'arc_sense' arc from 'from_pin' to 'to_pin' has clock sense applied in constraint set 'scenario1' but is missing in constraint set 'scenario2'.
+S2S_CLK_0009  error     enabled   Clock sense applied to arc from 'from_pin' to 'to_pin' in constraint set 'scenario1' does not match the clock sense applied in constraint set 'scenario2'.
+S2S_CLK_0010  error     enabled   Clock gating check applied to 'object_type' 'object' in constraint set 'scenario1' is missing in constraint set 'scenario2'.
+S2S_CLK_0011  error     enabled   Pin 'object' has clock sense applied in constraint set 'scenario1' that is missing in constraint set 'scenario2'.
+S2S_CLK_0012  error     enabled   Clock gating check applied to 'object_type' 'object1' in constraint set 'scenario1' does not match the clock gating check applied to 'object2' in the constraint set 'scenario2'.
+S2S_CLK_0014  warning   disabled  The clock 'clock1' of scenario 'scenario1' is a propagated clock but corresponding clock 'clock2' of scenario 'scenario2' is not propagated.
+S2S_CLT_0001  error     enabled   'constraint' applied to 'object_type' 'object' in constraint set 'scenario1' is missing in constraint set 'scenario2'.
+S2S_CLT_0003  error     enabled   'constraint' applied to 'object_type1' 'object1' in constraint set 'scenario1' does not match the 'object_type2' 'object2' applied in constraint set 'scenario2'.
+S2S_CST_0001  error     enabled   'constraint' applied to 'object_type' 'object' in constraint set 'scenario1' is missing in constraint set 'scenario2'.
+S2S_CST_0003  error     enabled   'constraint' applied to 'object_type' 'object1' in constraint set 'scenario1' does not match the 'object_type' 'object2' applied in constraint set 'scenario2'.
+S2S_DAT_0001  error     enabled   The 'object_type' 'object' in constraint set 'scenario1' has a data check that is missing in constraint set 'scenario2'.
+S2S_DAT_0003  error     enabled   The data check value for 'object_type' 'object' in constraint set 'scenario1' does not match the value in constraint set 'scenario2'.
+S2S_DER_0001  error     enabled   The 'object_type' 'object' in constraint set 'scenario1' has a timing derate that is missing in constraint set 'scenario2'.
+S2S_DER_0003  error     enabled   The timing derate value for 'object_type' 'object' in constraint set 'scenario1' does not match the value in constraint set 'scenario2'.
+S2S_DIS_0001  error     enabled   'object_type' 'object' is disabled in constraint set 'scenario1' but not in constraint set 'scenario2'.
+S2S_DIS_0003  error     enabled   Arc 'object' 'object' is disabled in constraint set 'scenario1' but not in constraint set 'scenario2'.
+S2S_EXC_0001  error     enabled   Exception 'exception' in constraint set 'scenario1' is missing in constraint set 'scenario2'
+S2S_EXC_0003  error     enabled   Exception 'exception1' in constraint set 'scenario1' does not match exception 'exception2' in constraint set 'scenario2'
+S2S_EXD_0001  error     enabled   'pin_port' has 'input_output' delay constraints in constraint set 'scenario1' that are missing in constraint set 'scenario2'.
+S2S_EXD_0003  error     enabled   'pin_port' has different 'input_output' delay constraints in constraint set 'scenario1' and constraint set 'scenario2'.
+S2S_PUL_0001  error     enabled   The 'object_type' 'object' in constraint set 'scenario1' has a min pulse width that is missing in constraint set 'scenario2'.
+S2S_PUL_0003  error     enabled   The min pulse width value for 'object_type' 'object' in constraint set 'scenario1' does not match the value in constraint set 'scenario2'.
+S2S_TIM_0001  error     enabled   The 'object_type' 'object' in constraint set 'scenario1' has a max time borrow that is missing in constraint set 'scenario2'.
+S2S_TIM_0003  error     enabled   The max time borrow value for 'object_type' 'object' in constraint set 'scenario1' does not match the value in constraint set 'scenario2'.
+S2S_UNC_0001  error     enabled   Clock uncertainty applied to 'object_type' 'object' in constraint set 'scenario1' is missing in constraint set 'scenario2'.
+S2S_UNC_0003  error     enabled   Clock uncertainty applied to 'object_type' 'object1' in constraint set 'scenario1' does not match the clock uncertainty applied to 'object2' in the constraint set 'scenario2'.
+S2S_UNC_0004  error     enabled   Clock uncertainty applied between 'clock1' and 'clock2' in constraint set 'scenario1' is missing in constraint set 'scenario2' between 'clock3' and 'clock4'.
+S2S_UNC_0006  error     enabled   Clock uncertainty applied between 'clock1' and 'clock2' in constraint set 'scenario1' does not match the clock uncertainty applied between 'second_clock1' and 'second_clock2' in constraint set 'scenario2'.
+TRN_0001      warning   disabled  The transition constraint on 'object_type' 'object' is larger than the maximum transition design rule.
+TRN_0002      warning   disabled  The set_max_transition constraint on 'object_type' 'object' is larger than the maximum transition design rule in the library.
+UNC_0001      warning   enabled   Input/Output delays are defined relative to clock 'clock'. This clock has incomplete uncertainty values required for those external delays even though its source ports/pins have more complete uncertainties defined on them.
+UNC_0002      warning   enabled   Clock uncertainty is specified on 'object_type' 'object' but that object is not in any clock's network.
+UNC_0003      warning   disabled  Clock uncertainty is incomplete or incorrect between two interacting clocks 'clock1' and 'clock2'
+UNC_0004      warning   disabled  Inter clock uncertainty is smaller than simple uncertainty for clock 'clock'.
+UNC_0005      warning   disabled  Inter clock uncertainty is smaller than object based uncertainty at 'object_type' 'object' for clock 'clock'.
+UNC_0006      warning   disabled  Object based uncertainty at 'object_type' 'object' is smaller than simple uncertainty for clock 'clock'.
+UNT_0001      error     enabled   Library 'library' has no units defined.
+UNT_0002      error     enabled   Library 'library' has incomplete units defined.
+UNT_0003      info      disabled  The libraries used by this design have inconsistent units.
+1

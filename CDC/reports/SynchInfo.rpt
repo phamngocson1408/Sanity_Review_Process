@@ -1,0 +1,109 @@
+*********************************************************************************************
+*          Section: 1 Crossings Synchronized by Valid Synchronization scheme         *
+*********************************************************************************************
+---------------------------------------------------------------------------------------------
+S. No.            Source            Destination Flop            Synchronizer Flop(s)         
+---------------------------------------------------------------------------------------------
+*********************************************************************************************
+*          Section: 2 Crossings Synchronized by UDS scheme         *
+*********************************************************************************************
+---------------------------------------------------------------------------------------------
+S. No.            Source            Destination Flop            Synchonizer cell/module    
+---------------------------------------------------------------------------------------------
+1.            AESDMA_RTKEY_SEL            u_rtkey_sel/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+2.            ENERR_AESDMA_ECC_E1_SRAM_ROB            u_enerr_ecc_e1_sram_rob/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+3.            ENERR_AESDMA_ECC_DEC_DCLS_SRAM_ROB            u_enerr_ecc_dec_dcls_sram_rob/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+4.            ENERR_AESDMA_ECC_E2_SRAM_ROB            u_enerr_ecc_e2_sram_rob/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+5.            ENERR_AESDMA_ECC_E1_SRAM_WRFIFO            u_enerr_ecc_e1_sram_wrfifo/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+6.            ENERR_AESDMA_ECC_E2_SRAM_WRFIFO            u_enerr_ecc_e2_sram_wrfifo/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+7.            ENERR_AESDMA_ECC_DEC_DCLS_SRAM_WRFIFO            u_enerr_ecc_dec_dcls_sram_wrfifo/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+8.            FIERR_AESDMA_ECC_E1_SRAM_ROB            u_fierr_ecc_e1_sram_rob/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+9.            FIERR_AESDMA_ECC_E2_SRAM_ROB            u_fierr_ecc_e2_sram_rob/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+10.            FIERR_AESDMA_ECC_DEC_DCLS_SRAM_ROB            u_fierr_ecc_dec_dcls_sram_rob/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+11.            FIERR_AESDMA_ECC_E1_SRAM_WRFIFO            u_fierr_ecc_e1_sram_wrfifo/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+12.            FIERR_AESDMA_ECC_E2_SRAM_WRFIFO            u_fierr_ecc_e2_sram_wrfifo/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+13.            FIERR_AESDMA_ECC_DEC_DCLS_SRAM_WRFIFO            u_fierr_ecc_dec_dcls_sram_wrfifo/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+14.            ENERR_AESDMA_DCLS            u_enerr_dcls/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+15.            ENERR_AESDMA_AXI4_MI0_BUS_PARITY            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_enerr_axi_mi0_bus_parity/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+16.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_ARADDR[0]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_araddr/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+17.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_ARADDR[1]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_araddr/sync_inst[1].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+18.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_ARADDR[2]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_araddr/sync_inst[2].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+19.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_ARADDR[3]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_araddr/sync_inst[3].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+20.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_ARADDR[4]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_araddr/sync_inst[4].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+21.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_ARADDR[5]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_araddr/sync_inst[5].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+22.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[0]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+23.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[1]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[1].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+24.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[2]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[2].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+25.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[3]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[3].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+26.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[4]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[4].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+27.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[5]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[5].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+28.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[6]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[6].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+29.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[7]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[7].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+30.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[8]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[8].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+31.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[9]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[9].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+32.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[10]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[10].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+33.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[11]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[11].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+34.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[12]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[12].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+35.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[13]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[13].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+36.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[14]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[14].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+37.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_RDATA[15]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_rdata/sync_inst[15].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+38.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_AWADDR[0]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_awaddr/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+39.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_AWADDR[1]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_awaddr/sync_inst[1].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+40.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_AWADDR[2]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_awaddr/sync_inst[2].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+41.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_AWADDR[3]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_awaddr/sync_inst[3].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+42.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_AWADDR[4]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_awaddr/sync_inst[4].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+43.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_AWADDR[5]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_awaddr/sync_inst[5].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+44.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[0]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+45.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[1]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[1].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+46.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[2]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[2].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+47.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[3]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[3].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+48.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[4]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[4].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+49.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[5]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[5].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+50.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[6]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[6].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+51.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[7]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[7].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+52.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[8]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[8].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+53.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[9]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[9].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+54.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[10]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[10].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+55.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[11]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[11].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+56.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[12]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[12].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+57.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[13]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[13].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+58.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[14]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[14].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+59.            FIERR_AESDMA_AXI4_MI0_BUS_PARITY_WDATA[15]            u_AESDMA_BUS_PARITY_AXI4_M/u_bos_synch_fierr_err_axi_mi0_bus_parity_wdata/sync_inst[15].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+60.            gN1B0ApbASB.u_apbasyncbridgeslv_aesdma/u_slv_core/apb_async_req_r/Q            gN1B0ApbASB.u_apbasyncbridgemstr_aesdma/u_req_sync/u_BOS_SOC_SYNCHSR/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+61.            ENERR_AESDMA_ECC_E1_SRAM_WRFIFO            gen_wide_SRAM_WRFIFO[0].gen_SRAM_WRFIFO[0].gSF4WrMemInst.u_SRAM_WR_FIFO/u_sync_E1_CLR_N/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+62.            ENERR_AESDMA_ECC_E2_SRAM_WRFIFO            gen_wide_SRAM_WRFIFO[0].gen_SRAM_WRFIFO[0].gSF4WrMemInst.u_SRAM_WR_FIFO/u_sync_E2_CLR_N/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+63.            FIERR_AESDMA_ECC_E1_SRAM_WRFIFO            gen_wide_SRAM_WRFIFO[0].gen_SRAM_WRFIFO[0].gSF4WrMemInst.u_SRAM_WR_FIFO/u_sync_E1_INJ/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+64.            FIERR_AESDMA_ECC_E2_SRAM_WRFIFO            gen_wide_SRAM_WRFIFO[0].gen_SRAM_WRFIFO[0].gSF4WrMemInst.u_SRAM_WR_FIFO/u_sync_E2_INJ/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+65.            ENERR_AESDMA_ECC_DEC_DCLS_SRAM_WRFIFO            gen_wide_SRAM_WRFIFO[0].gen_SRAM_WRFIFO[0].gSF4WrMemInst.u_SRAM_WR_FIFO/u_sync_DE_CLR_N/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+66.            FIERR_AESDMA_ECC_DEC_DCLS_SRAM_WRFIFO            gen_wide_SRAM_WRFIFO[0].gen_SRAM_WRFIFO[0].gSF4WrMemInst.u_SRAM_WR_FIFO/u_sync_DE_INJ/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+67.            ENERR_AESDMA_ECC_E1_SRAM_ROB            gen_wide_SRAM_ROB[0].gen_SRAM_ROB[0].gSF4MemInst.gSF4MemBdInst.u_SRAM_ROB_FIFO_BD/u_sync_E1_CLR_N/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+68.            ENERR_AESDMA_ECC_E2_SRAM_ROB            gen_wide_SRAM_ROB[0].gen_SRAM_ROB[0].gSF4MemInst.gSF4MemBdInst.u_SRAM_ROB_FIFO_BD/u_sync_E2_CLR_N/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+69.            FIERR_AESDMA_ECC_E1_SRAM_ROB            gen_wide_SRAM_ROB[0].gen_SRAM_ROB[0].gSF4MemInst.gSF4MemBdInst.u_SRAM_ROB_FIFO_BD/u_sync_E1_INJ/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+70.            FIERR_AESDMA_ECC_E2_SRAM_ROB            gen_wide_SRAM_ROB[0].gen_SRAM_ROB[0].gSF4MemInst.gSF4MemBdInst.u_SRAM_ROB_FIFO_BD/u_sync_E2_INJ/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+71.            ENERR_AESDMA_ECC_DEC_DCLS_SRAM_ROB            gen_wide_SRAM_ROB[0].gen_SRAM_ROB[0].gSF4MemInst.gSF4MemBdInst.u_SRAM_ROB_FIFO_BD/u_sync_DE_CLR_N/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+72.            FIERR_AESDMA_ECC_DEC_DCLS_SRAM_ROB            gen_wide_SRAM_ROB[0].gen_SRAM_ROB[0].gSF4MemInst.gSF4MemBdInst.u_SRAM_ROB_FIFO_BD/u_sync_DE_INJ/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+73.            ENERR_AESDMA_ECC_E1_SRAM_ROB            gen_wide_SRAM_ROB[0].gen_SRAM_ROB[1].gSF4MemInst.gSF4MemBdInst.u_SRAM_ROB_FIFO_BD/u_sync_E1_CLR_N/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+74.            ENERR_AESDMA_ECC_E2_SRAM_ROB            gen_wide_SRAM_ROB[0].gen_SRAM_ROB[1].gSF4MemInst.gSF4MemBdInst.u_SRAM_ROB_FIFO_BD/u_sync_E2_CLR_N/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+75.            FIERR_AESDMA_ECC_E1_SRAM_ROB            gen_wide_SRAM_ROB[0].gen_SRAM_ROB[1].gSF4MemInst.gSF4MemBdInst.u_SRAM_ROB_FIFO_BD/u_sync_E1_INJ/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+76.            FIERR_AESDMA_ECC_E2_SRAM_ROB            gen_wide_SRAM_ROB[0].gen_SRAM_ROB[1].gSF4MemInst.gSF4MemBdInst.u_SRAM_ROB_FIFO_BD/u_sync_E2_INJ/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+77.            ENERR_AESDMA_ECC_DEC_DCLS_SRAM_ROB            gen_wide_SRAM_ROB[0].gen_SRAM_ROB[1].gSF4MemInst.gSF4MemBdInst.u_SRAM_ROB_FIFO_BD/u_sync_DE_CLR_N/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+78.            FIERR_AESDMA_ECC_DEC_DCLS_SRAM_ROB            gen_wide_SRAM_ROB[0].gen_SRAM_ROB[1].gSF4MemInst.gSF4MemBdInst.u_SRAM_ROB_FIFO_BD/u_sync_DE_INJ/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR_LVT
+79.            gN1B0ApbASB.u_apbasyncbridgemstr_aesdma/u_mstr_core/apb_async_ack_r/Q            gN1B0ApbASB.u_apbasyncbridgeslv_aesdma/u_ack_sync/u_BOS_SOC_SYNCHSR/sync_inst[0].genblk1.genblk1.u_dont_touch_sync_dff2/D             BOS_SOC_SYNCHSR
+*********************************************************************************************
+*          Section: 3  Resets synchronized by 'Multi-Flop' technique          *
+*********************************************************************************************
+---------------------------------------------------------------------------------------------
+S. No.            Reset            Synchronizer Flop(s)          Synchronizer Clock(s)      
+---------------------------------------------------------------------------------------------
+*********************************************************************************************
+*          Section: 4 Reset Synchronized by UDS scheme         *
+*********************************************************************************************
+---------------------------------------------------------------------------------------------
+S. No.            Reset            Synchronizer Flop(s)          Synchronizer Clock(s)      
+---------------------------------------------------------------------------------------------
+*********************************************************************************************
+*          Section: 5  Clock domain crossings for quasi-static signals                      *
+*********************************************************************************************
+---------------------------------------------------------------------------------------------
+S. No.            Source Instance           Destination Instance     
+---------------------------------------------------------------------------------------------
