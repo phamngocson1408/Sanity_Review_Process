@@ -8,6 +8,7 @@ from unittest.mock import patch
 from pathlib import Path
 
 from sanity_lint_review import (
+    AutoFilterIndex,
     WORKBOOK_MANAGEMENT_COLUMNS,
     filter_expr,
     format_filter_fields_spec,
@@ -376,6 +377,27 @@ class RecordStatusTests(unittest.TestCase):
 
         self.assertNotIn("FileName", expression)
         self.assertNotIn("LineNumber", expression)
+
+    def test_auto_filter_index_reuses_counts_for_many_waivers(self):
+        rows = []
+        for index in range(100):
+            row = self.row(f"issue-{index}", object_name=f"sig_{index}")
+            row["fields_json"] = json.dumps({
+                "Goal": "LINT", "Module": "top", "Signal": f"sig_{index}",
+            })
+            rows.append(row)
+
+        auto_filter_index = AutoFilterIndex(rows)
+        with patch.object(auto_filter_index, "match_count", wraps=auto_filter_index.match_count) as match_count:
+            expressions = [
+                waiver_filter_expression(row, rows, auto_filter_index)
+                for row in rows
+            ]
+
+        self.assertEqual(len(expressions), 100)
+        self.assertEqual(len(auto_filter_index._counts), 3)
+        self.assertEqual(match_count.call_count, 300)
+        self.assertIn('(Signal == "sig_99")', expressions[-1])
 
 
 if __name__ == "__main__":

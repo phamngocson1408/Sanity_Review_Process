@@ -82,6 +82,9 @@ python sanity_lint_review.py gen_waiver
 
 This imports existing Excel edits and generates `vc_waiver.tcl`.
 
+For large workbooks, `python sanity_lint_review.py gen_waiver --no-update-excel`
+generates the same Tcl without spending time rewriting the Excel workbook.
+
 Then run the sanity tool so `reports/report_lint.full.log` is refreshed with the new waiver file.
 
 After the sanity tool finishes, run:

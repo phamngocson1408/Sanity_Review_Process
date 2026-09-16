@@ -573,6 +573,44 @@ def row_issue_fields(row: dict[str, str]) -> dict[str, str]:
     return fields if isinstance(fields, dict) else {}
 
 
+class AutoFilterIndex:
+    """Cache AUTO-filter uniqueness counts for a set of review rows.
+
+    The old implementation reparsed fields_json and rescanned every row with
+    the same tag for every waived issue and every candidate field.  Large
+    review workbooks can contain tens of thousands of waived issues, making
+    that approach effectively quadratic.  This index parses each row once and
+    builds a count table once for each field-prefix shape that is requested.
+    """
+
+    def __init__(self, rows: list[dict[str, str]]) -> None:
+        self._fields_by_row_id = {id(row): row_issue_fields(row) for row in rows}
+        self._rows_by_tag: dict[str, list[dict[str, str]]] = {}
+        for row in rows:
+            if row.get("record_status") == "REMOVED":
+                continue
+            self._rows_by_tag.setdefault(row.get("tag", ""), []).append(row)
+        self._counts: dict[tuple[str, tuple[str, ...]], Counter[tuple[str, ...]]] = {}
+
+    def fields(self, row: dict[str, str]) -> dict[str, str]:
+        fields = self._fields_by_row_id.get(id(row))
+        if fields is None:
+            fields = row_issue_fields(row)
+            self._fields_by_row_id[id(row)] = fields
+        return fields
+
+    def match_count(self, tag: str, keys: tuple[str, ...], values: tuple[str, ...]) -> int:
+        cache_key = (tag, keys)
+        counts = self._counts.get(cache_key)
+        if counts is None:
+            counts = Counter(
+                tuple(filter_value(key, self.fields(candidate).get(key)) for key in keys)
+                for candidate in self._rows_by_tag.get(tag, [])
+            )
+            self._counts[cache_key] = counts
+        return counts[values]
+
+
 def parse_filter_fields_spec(spec: str, fields: dict[str, str]) -> OrderedDict[str, str]:
     result: OrderedDict[str, str] = OrderedDict()
     parsed_items = next(csv.reader([spec], skipinitialspace=True), [])
@@ -614,23 +652,22 @@ def format_filter_fields_spec(filter_fields: dict[str, str], fields: dict[str, s
     return output.getvalue()
 
 
-def auto_filter_fields(row: dict[str, str], rows: list[dict[str, str]]) -> OrderedDict[str, str]:
-    fields = row_issue_fields(row)
-    candidates = [
-        candidate for candidate in rows
-        if candidate.get("record_status") != "REMOVED" and candidate.get("tag") == row.get("tag")
-    ]
+def auto_filter_fields(
+    row: dict[str, str],
+    rows: list[dict[str, str]],
+    auto_filter_index: AutoFilterIndex | None = None,
+) -> OrderedDict[str, str]:
+    index = auto_filter_index or AutoFilterIndex(rows)
+    fields = index.fields(row)
     selected: OrderedDict[str, str] = OrderedDict()
     for key in AUTO_FILTER_PRIORITY:
         value = filter_value(key, fields.get(key))
         if not value:
             continue
         selected[key] = value
-        matches = [
-            candidate for candidate in candidates
-            if all(filter_value(name, row_issue_fields(candidate).get(name)) == expected for name, expected in selected.items())
-        ]
-        if len(matches) == 1:
+        keys = tuple(selected)
+        values = tuple(selected.values())
+        if index.match_count(row.get("tag", ""), keys, values) == 1:
             return selected
     issue = row.get("issue_id") or row.get("tag") or "unknown issue"
     if selected:
@@ -638,7 +675,11 @@ def auto_filter_fields(row: dict[str, str], rows: list[dict[str, str]]) -> Order
     raise ValueError(f"AUTO filter cannot identify {issue}: no supported fields have values")
 
 
-def waiver_filter_expression(row: dict[str, str], rows: list[dict[str, str]]) -> str:
+def waiver_filter_expression(
+    row: dict[str, str],
+    rows: list[dict[str, str]],
+    auto_filter_index: AutoFilterIndex | None = None,
+) -> str:
     mode = norm(row.get("filter_mode") or "AUTO").upper()
     if mode == "CUSTOM":
         expression = row.get("custom_filter", "").strip()
@@ -650,7 +691,7 @@ def waiver_filter_expression(row: dict[str, str], rows: list[dict[str, str]]) ->
     if mode == "FIELDS":
         return filter_expr(parse_filter_fields_spec(row.get("filter_fields", ""), row_issue_fields(row)))
     if mode == "AUTO":
-        return filter_expr(auto_filter_fields(row, rows))
+        return filter_expr(auto_filter_fields(row, rows, auto_filter_index))
     raise ValueError(f"Unsupported Filter Mode: {mode!r}")
 
 
@@ -1692,10 +1733,14 @@ def generate_waiver_from_rows(rows: list[dict[str, str]], output_path: Path, use
     }
     for row in rows:
         row.pop("_waiver_note", None)
+    auto_filter_index = AutoFilterIndex(rows) if any(
+        norm(row.get("filter_mode") or "AUTO").upper() == "AUTO"
+        for row in eligible_rows
+    ) else None
     grouped_rows: OrderedDict[tuple[str, str, str], list[dict[str, str]]] = OrderedDict()
     for row in eligible_rows:
         try:
-            filter_expression = waiver_filter_expression(row, rows)
+            filter_expression = waiver_filter_expression(row, rows, auto_filter_index)
         except ValueError as error:
             issue = row.get("issue_id") or row.get("waiver_name") or "unknown issue"
             raise ValueError(f"Invalid waiver filter for {row.get('tag', '')}/{issue}: {error}") from error
@@ -1822,18 +1867,21 @@ def cmd_gen_waiver(args: argparse.Namespace) -> None:
     rows = read_review_workbook(args.excel)
     generate_waiver_from_rows(rows, args.output, args.user)
     workbook_updated = False
-    try:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            previous_excel = Path(temp_dir) / args.excel.name
-            shutil.copy2(args.excel, previous_excel)
-            export_review_workbook(rows, args.excel, previous_excel=previous_excel)
-            workbook_updated = True
-    except PermissionError:
-        print(f"warning: could not update shared-waiver notes because {args.excel} is open or locked")
+    if not args.no_update_excel:
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                previous_excel = Path(temp_dir) / args.excel.name
+                shutil.copy2(args.excel, previous_excel)
+                export_review_workbook(rows, args.excel, previous_excel=previous_excel)
+                workbook_updated = True
+        except PermissionError:
+            print(f"warning: could not update shared-waiver notes because {args.excel} is open or locked")
     print(f"read {len(rows)} rows from {args.excel}")
     print(f"wrote {args.output}")
     if workbook_updated:
         print(f"updated shared-waiver notes in {args.excel}")
+    elif args.no_update_excel:
+        print("skipped Excel metadata and shared-waiver note updates")
     print("Next: run the sanity tool to refresh reports/report_lint.full.log.")
 
 
@@ -1907,6 +1955,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--excel", type=Path, default=Path("outputs/lint_review.xlsx"))
     p.add_argument("--output", type=Path, default=Path("vc_waiver.tcl"))
     p.add_argument("--user", default="")
+    p.add_argument(
+        "--no-update-excel",
+        action="store_true",
+        help="Generate Tcl without rewriting the review workbook (faster for large workbooks).",
+    )
     p.set_defaults(func=cmd_gen_waiver)
 
     p = sub.add_parser("merge_excel", help="Merge report logs into lint_review.xlsx.")

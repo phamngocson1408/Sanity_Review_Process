@@ -157,6 +157,15 @@ This reads reviewer edits from `outputs/lint_review.xlsx`, then generates:
 vc_waiver.tcl
 ```
 
+For a large workbook, use the fast path when only the Tcl output is needed:
+
+```powershell
+python sanity_lint_review.py gen_waiver --no-update-excel
+```
+
+This skips rewriting `lint_review.xlsx`, including generated waiver metadata and
+shared-waiver cell notes. It does not change the generated `vc_waiver.tcl`.
+
 8. Run sanity check again with the new `vc_waiver.tcl`.
 
 The sanity tool creates new reports.
