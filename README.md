@@ -82,6 +82,8 @@ python sanity_lint_review.py gen_waiver
 
 This imports existing Excel edits and generates `vc_waiver.tcl`.
 
+`gen_waiver` refuses to overwrite a Tcl file that was edited manually or has no saved generation hash. After reviewing the existing Tcl, use `gen_waiver --force` to save a timestamped backup and regenerate it. The hash is stored in `vc_waiver.tcl.sha256`; keep that file with the generated Tcl. See [`LINT/REVIEW_FLOW.md`](LINT/REVIEW_FLOW.md) for the recovery steps.
+
 For large workbooks, `python sanity_lint_review.py gen_waiver --no-update-excel`
 generates the same Tcl without spending time rewriting the Excel workbook.
 
@@ -143,7 +145,7 @@ python sanity_lint_review.py clean --keep-waiver
 
 ## Workbook Metadata
 
-`lint_review.xlsx` keeps the report-owned columns from `report_lint.full.xlsx`, plus `record_status`.
+`lint_review.xlsx` keeps the report-owned columns from `report_lint.full.xlsx`, plus the visible `Issue Status` and `Time Stamp` columns (`record_status` and `waiver_timestamp` internally).
 
 Reviewer-owned columns:
 
@@ -162,24 +164,16 @@ The script derives `issue_id` and Tcl filter fields from the report-owned column
 - `REDUNDANT`: waiver name is not referenced by any current waived issue and should be reviewed for removal.
 - `MISSING_IN_TCL`: the review workbook references this waiver name, but it was not found in the input `vc_waiver.tcl`.
 
-## Wildcard
+## Filter syntax
 
-Wildcard is controlled by the internally derived `filter_json`.
+The LINT workbook supports three filter modes:
 
-Example:
+- `AUTO`: leave `Filter Fields` and `Custom Filter` empty. The script selects report fields automatically.
+- `FIELDS`: enter a comma-separated field list such as `Goal, Module, Signal`. Use `Field=value` to override a row value, for example `Goal, Module=AXICRYPT_*, Signal=I_*`.
+- `CUSTOM`: enter the complete expression, for example `(Goal == "BOS_LINT_RULE") AND (Module =~ "AXICRYPT_*")`.
 
-```json
-{"Goal":"BOS_LINT_RULE","Module":"AXICRYPT_*","Signal":"I_*"}
-```
+In `FIELDS` mode, a value containing `*` or `?` generates the wildcard operator `=~`; other values generate the exact-match operator `==`. In `CUSTOM` mode, write the operator explicitly because the expression is emitted unchanged.
 
-When a value contains `*` or `?`, the generated Tcl uses `=~`.
+See [`LINT/REVIEW_FLOW.md`](LINT/REVIEW_FLOW.md#filter-syntax-and-examples) for complete syntax, qualified field names, comma-containing values, and generated Tcl examples.
 
-```tcl
-(Module =~ "AXICRYPT_*")
-```
-
-Otherwise it uses exact match:
-
-```tcl
-(Module == "AXICRYPT_RCC")
-```
+For generated LINT waivers, `-user` always comes from the workbook's `IP Owner` column. `gen_waiver` reports an error when a `WAIVED` issue has no IP Owner; the internal legacy `waiver_user` field is not shown in Excel.

@@ -22,15 +22,28 @@ import sys
 import tempfile
 import zipfile
 from collections import Counter, OrderedDict
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Iterable
 from xml.etree import ElementTree as ET
 
 
-DEFAULT_WAIVER_USER = "sanity_lint_review"
 OWNED_WAIVER_FILENAME = "vc_waiver.tcl"
 WORKBOOK_HASH_PREFIX = "# Review workbook SHA256: "
+
+
+@dataclass(frozen=True)
+class FormulaCell:
+    formula: str
+    cached_value: str
+
+
+@dataclass(frozen=True)
+class ColumnWidthLayout:
+    by_header: dict[str, dict[str, str]]
+    by_index: dict[int, dict[str, str]]
+    sheet_format: dict[str, str]
 
 
 BASE_COLUMNS = [
@@ -62,6 +75,7 @@ BASE_COLUMNS = [
     "waiver_source_file",
     "waiver_user",
     "waiver_timestamp",
+    "waiver_owner_signature",
     "filter_json",
     "fields_json",
 ]
@@ -162,21 +176,26 @@ MANAGEMENT_COLUMNS = [
     "waiver_source_file",
     "waiver_user",
     "waiver_timestamp",
+    "waiver_owner_signature",
     "filter_json",
     "fields_json",
 ]
 WORKBOOK_MANAGEMENT_COLUMNS = [
-    column
+    {"record_status": "Issue Status", "waiver_timestamp": "Time Stamp"}.get(column, column)
     for column in MANAGEMENT_COLUMNS
-    if column not in {"waiver_enabled", "filter_json", "fields_json"}
+    if column not in {"waiver_enabled", "waiver_user", "filter_json", "fields_json"}
 ]
 RECORD_STATUSES = {"NEW", "CHANGED", "UNCHANGED", "REMOVED"}
 HEADER_NOTES = {
-    "record_status": (
+    "Issue Status": (
         "NEW: the issue appears for the first time\n"
         "CHANGED: an existing issue has changed attributes\n"
         "UNCHANGED: the issue still exists without changes\n"
         "REMOVED: the issue no longer appears in the current report"
+    ),
+    "Time Stamp": (
+        "Generated waiver timestamp. Updated by gen_waiver when the IP owner changes "
+        "the issue's owner fields or filter. Do not change manually."
     ),
     "source_report": (
         "full: the issue comes from report_lint.full\n"
@@ -253,7 +272,7 @@ def generated_files(base_dir: Path, keep_waiver: bool = False) -> list[Path]:
         base_dir / "outputs" / "generated_vc_waiver.tcl",
     ]
     if not keep_waiver:
-        paths.append(base_dir / "vc_waiver.tcl")
+        paths.extend([base_dir / "vc_waiver.tcl", base_dir / "vc_waiver.tcl.sha256"])
     return paths
 
 
@@ -808,6 +827,7 @@ def preserve_review_fields(row: dict[str, str], old: dict[str, str]) -> None:
     if old_filter_is_valid:
         for key in ["filter_mode", "filter_fields", "custom_filter"]:
             row[key] = old.get(key, "")
+    row["waiver_owner_signature"] = old.get("waiver_owner_signature", "")
     row["waiver_enabled"] = "yes" if row.get("owner_action", "").upper() == "WAIVED" else "no"
 
 
@@ -969,6 +989,7 @@ def sheet_xml(
     has_comments: bool = False,
     tab_color: str | None = None,
     colorize_severity_rows: bool = False,
+    column_layout: ColumnWidthLayout | None = None,
 ) -> str:
     if not rows:
         rows = [[""]]
@@ -989,43 +1010,63 @@ def sheet_xml(
     ]
     if tab_color:
         out.append(f'<sheetPr><tabColor rgb="{tab_color}"/></sheetPr>')
+    out.append(
+        '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" '
+        'topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+    )
+    if column_layout and column_layout.sheet_format:
+        attributes = "".join(
+            f' {key}="{html.escape(value, quote=True)}"'
+            for key, value in column_layout.sheet_format.items()
+        )
+        out.append(f"<sheetFormatPr{attributes}/>")
+    column_elements = []
+    old_by_header = column_layout.by_header if column_layout else {}
+    old_by_index = column_layout.by_index if column_layout else {}
+    for col_idx in range(1, max(col_count, *old_by_index.keys(), 0) + 1):
+        column = header[col_idx - 1] if col_idx <= len(header) else ""
+        old_properties = old_by_header.get(column) if column else None
+        if old_properties is None:
+            old_properties = old_by_index.get(col_idx, {}) if not column else {}
+        attributes = "".join(
+            f' {key}="{html.escape(value, quote=True)}"'
+            for key, value in old_properties.items()
+        )
+        hidden = (
+            ' hidden="1"'
+            if col_idx - 1 in managed_column_indexes
+            and header[col_idx - 1] not in {"Issue Status", "Time Stamp"}
+            else ""
+        )
+        if attributes or hidden:
+            column_elements.append(f'<col min="{col_idx}" max="{col_idx}"{attributes}{hidden}/>')
+    if column_elements:
+        out.extend(["<cols>", *column_elements, "</cols>"])
     out.extend([
-        "<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>",
-        "<cols>",
-    ])
-    widths = {
-        1: 7,
-        2: 18,
-        3: 13,
-        4: 14,
-        5: 42,
-        7: 48,
-        11: 64,
-        13: 72,
-    }
-    for col_idx in range(1, col_count + 1):
-        width = widths.get(col_idx, 18)
-        out.append(f'<col min="{col_idx}" max="{col_idx}" width="{width}" customWidth="1"/>')
-    out.extend([
-        "</cols>",
         "<sheetData>",
     ])
     for r_idx, row in enumerate(rows, start=1):
         out.append(f'<row r="{r_idx}">')
         for c_idx, value in enumerate(row):
             cell_ref = f"{xlsx_col_name(c_idx)}{r_idx}"
-            text = "" if value is None else str(value)
+            text = value.cached_value if isinstance(value, FormulaCell) else ("" if value is None else str(value))
             style = ""
             if r_idx == 1 and c_idx in managed_column_indexes:
                 style = ' s="3"'
             elif r_idx == 1:
                 style_id = 1 if text in editable_headers else 2
                 style = f' s="{style_id}"'
-            elif colorize_severity_rows and severity_column_index is not None and severity_column_index < len(row):
+            elif colorize_severity_rows and c_idx == severity_column_index and severity_column_index < len(row):
                 severity = str(row[severity_column_index]).strip().casefold()
                 if severity in SEVERITY_ROW_STYLE_IDS:
                     style = f' s="{SEVERITY_ROW_STYLE_IDS[severity]}"'
-            out.append(f'<c r="{cell_ref}"{style} t="inlineStr"><is><t xml:space="preserve">{html.escape(text)}</t></is></c>')
+            if isinstance(value, FormulaCell):
+                out.append(
+                    f'<c r="{cell_ref}"{style}><f>{html.escape(value.formula, quote=False)}</f>'
+                    f'<v>{html.escape(value.cached_value)}</v></c>'
+                )
+            else:
+                out.append(f'<c r="{cell_ref}"{style} t="inlineStr"><is><t xml:space="preserve">{html.escape(text)}</t></is></c>')
         out.append("</row>")
     out.extend(["</sheetData>", '<autoFilter ref="A1:{}{}"/>'.format(xlsx_col_name(col_count - 1), row_count)])
     validations = []
@@ -1053,13 +1094,17 @@ def sheet_xml(
     return "".join(out)
 
 
-def header_comments(rows: list[list[object]]) -> list[tuple[str, str, int]]:
+def header_comments(
+    rows: list[list[object]],
+    report_owned_headers: set[str] | None = None,
+) -> list[tuple[str, str, int]]:
     if not rows:
         return []
+    report_owned_headers = report_owned_headers or set()
     return [
-        (f"{xlsx_col_name(index)}1", HEADER_NOTES[column], index)
+        (f"{xlsx_col_name(index)}1", HEADER_NOTES.get(column, "Do not change"), index)
         for index, value in enumerate(rows[0])
-        if (column := str(value)) in HEADER_NOTES
+        if (column := str(value)) in HEADER_NOTES or column in report_owned_headers
     ]
 
 
@@ -1100,14 +1145,18 @@ def write_xlsx(
     sheets: dict[str, list[list[object]]],
     editable_headers_by_sheet: dict[str, set[str]] | None = None,
     cell_notes_by_sheet: dict[str, list[tuple[str, str, int]]] | None = None,
+    report_owned_headers_by_sheet: dict[str, set[str]] | None = None,
+    column_layouts_by_sheet: dict[str, ColumnWidthLayout] | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     editable_headers_by_sheet = editable_headers_by_sheet or {}
     cell_notes_by_sheet = cell_notes_by_sheet or {}
+    report_owned_headers_by_sheet = report_owned_headers_by_sheet or {}
+    column_layouts_by_sheet = column_layouts_by_sheet or {}
     sheet_items = list(sheets.items())
     summary_rows = sheets.get("Summary", sheets.get("Tree Summary", []))
     comments_by_sheet = [
-        header_comments(rows) + cell_notes_by_sheet.get(name, [])
+        header_comments(rows, report_owned_headers_by_sheet.get(name)) + cell_notes_by_sheet.get(name, [])
         for name, rows in sheet_items
     ]
     content_types = [
@@ -1155,6 +1204,7 @@ def write_xlsx(
         workbook_sheets.append("<definedNames>")
         workbook_sheets.extend(defined_names)
         workbook_sheets.append("</definedNames>")
+    workbook_sheets.append('<calcPr calcId="191029" calcMode="auto" fullCalcOnLoad="1" forceFullCalc="1"/>')
     workbook_sheets.append("</workbook>")
     rels.append(f'<Relationship Id="rId{len(sheet_items)+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>')
     rels.append("</Relationships>")
@@ -1212,6 +1262,7 @@ def write_xlsx(
                     bool(comments),
                     sheet_tab_color(_name, rows, summary_rows),
                     _name.casefold() in {"tree summary", "summary"},
+                    column_layouts_by_sheet.get(_name),
                 ),
             )
             if comments:
@@ -1418,6 +1469,47 @@ def cell_text(cell: ET.Element, shared_strings: list[str]) -> str:
     return value_el.text
 
 
+def read_workbook_column_layouts(path: Path | None) -> dict[str, ColumnWidthLayout]:
+    if not path or not path.exists():
+        return {}
+    layouts: dict[str, ColumnWidthLayout] = {}
+    with zipfile.ZipFile(path) as zf:
+        shared_strings = read_shared_strings(zf)
+        for sheet_name, target in xlsx_sheet_targets(zf).items():
+            root = ET.fromstring(zf.read(target))
+            header_row = root.find(f"{{{NS_MAIN}}}sheetData/{{{NS_MAIN}}}row")
+            headers_by_index: dict[int, str] = {}
+            if header_row is not None:
+                for cell in header_row.findall(f"{{{NS_MAIN}}}c"):
+                    column = cell_text(cell, shared_strings)
+                    if column:
+                        headers_by_index[xlsx_col_index(cell.attrib.get("r", "")) + 1] = {
+                            "record_status": "Issue Status",
+                            "waiver_timestamp": "Time Stamp",
+                        }.get(column, column)
+            by_header: dict[str, dict[str, str]] = {}
+            by_index: dict[int, dict[str, str]] = {}
+            columns = root.find(f"{{{NS_MAIN}}}cols")
+            if columns is not None:
+                for old_col in columns.findall(f"{{{NS_MAIN}}}col"):
+                    properties = {
+                        key: old_col.attrib[key]
+                        for key in ("width", "customWidth", "bestFit")
+                        if key in old_col.attrib
+                    }
+                    if not properties:
+                        continue
+                    for index in range(int(old_col.attrib["min"]), int(old_col.attrib["max"]) + 1):
+                        by_index[index] = properties
+                        if header := headers_by_index.get(index):
+                            by_header[header] = properties
+            sheet_format = root.find(f"{{{NS_MAIN}}}sheetFormatPr")
+            layouts[sheet_name] = ColumnWidthLayout(
+                by_header, by_index, dict(sheet_format.attrib) if sheet_format is not None else {}
+            )
+    return layouts
+
+
 def read_xlsx_sheets(path: Path) -> dict[str, list[dict[str, str]]]:
     with zipfile.ZipFile(path) as zf:
         shared_strings = read_shared_strings(zf)
@@ -1461,7 +1553,7 @@ def read_xlsx_first_sheet(path: Path) -> list[dict[str, str]]:
 
 def xlsx_row_fields(source: dict[str, str]) -> dict[str, str]:
     ignored = set(REVIEW_SHEET_COLUMNS + LEGACY_REVIEW_SHEET_COLUMNS + MANAGEMENT_COLUMNS + [
-        "record_status", "review_status", "review_comment", "owner_action", "owner_comment",
+        "Issue Status", "Time Stamp", "record_status", "review_status", "review_comment", "owner_action", "owner_comment",
         "ip_owner", "reviewer", "reviewer_decision", "reviewer_comment",
     ])
     return {key: value for key, value in source.items() if key and key not in ignored}
@@ -1499,7 +1591,7 @@ def row_from_xlsx_issue(source: dict[str, str], severity_by_tag: dict[str, str] 
         reviewer_decision = "APPROVED" if legacy_judgment == "APPROVED" else "PENDING"
     return {
         "issue_id": wid,
-        "record_status": normalize_record_status(source.get("record_status")),
+        "record_status": normalize_record_status(source.get("Issue Status") or source.get("record_status")),
         "owner_action": owner_action,
         "waiver_enabled": "yes" if owner_action == "WAIVED" else "no",
         "waiver_name": norm(source.get("waiver_name")),
@@ -1525,7 +1617,8 @@ def row_from_xlsx_issue(source: dict[str, str], severity_by_tag: dict[str, str] 
         "source_report": norm(source.get("source_report")) or "full",
         "waiver_source_file": norm(source.get("waiver_source_file")),
         "waiver_user": norm(source.get("waiver_user")),
-        "waiver_timestamp": norm(source.get("waiver_timestamp")),
+        "waiver_timestamp": norm(source.get("Time Stamp") or source.get("waiver_timestamp")),
+        "waiver_owner_signature": norm(source.get("waiver_owner_signature")),
         "filter_json": json.dumps(fields_for_filter(fields), ensure_ascii=False),
         "fields_json": json.dumps(fields, ensure_ascii=False),
     }
@@ -1564,7 +1657,7 @@ def read_review_workbook(path: Path) -> list[dict[str, str]]:
 
 def tag_sheet_columns(rows: list[dict[str, str]]) -> list[str]:
     dynamic: list[str] = []
-    seen = set(REVIEW_SHEET_COLUMNS + MANAGEMENT_COLUMNS)
+    seen = set(REVIEW_SHEET_COLUMNS + MANAGEMENT_COLUMNS + WORKBOOK_MANAGEMENT_COLUMNS)
     for col in CORE_LINT_COLUMNS:
         if col not in seen:
             dynamic.append(col)
@@ -1613,6 +1706,8 @@ def row_to_tag_sheet(row: dict[str, str], columns: list[str], index: int) -> lis
     values.update({key: str(value) for key, value in fields.items()})
     for key in MANAGEMENT_COLUMNS:
         values[key] = row.get(key, "")
+    values["Issue Status"] = row.get("record_status", "")
+    values["Time Stamp"] = row.get("waiver_timestamp", "")
     return [values.get(col, "") for col in columns]
 
 
@@ -1633,7 +1728,11 @@ def issue_id_from_workbook_source(source: dict[str, str]) -> str:
     return issue_id(xlsx_row_fields(source))
 
 
-def collect_user_extra_columns(previous_excel: Path | None, report_headers: dict[str, list[str]]) -> tuple[dict[str, list[str]], dict[str, dict[str, str]]]:
+def collect_user_extra_columns(
+    previous_excel: Path | None,
+    report_headers: dict[str, list[str]],
+    issue_columns_by_sheet: dict[str, set[str]] | None = None,
+) -> tuple[dict[str, list[str]], dict[str, dict[str, str]]]:
     extras_by_sheet: dict[str, list[str]] = {}
     values_by_issue: dict[str, dict[str, str]] = {}
     if not previous_excel or not previous_excel.exists():
@@ -1641,13 +1740,15 @@ def collect_user_extra_columns(previous_excel: Path | None, report_headers: dict
 
     old_sheets = read_xlsx_sheets(previous_excel)
     ignored = set(MANAGEMENT_COLUMNS + REVIEW_SHEET_COLUMNS + LEGACY_REVIEW_SHEET_COLUMNS + [
-        "record_status", "review_status", "review_comment", "owner_action", "owner_comment",
+        "Issue Status", "Time Stamp", "record_status", "review_status", "review_comment", "owner_action", "owner_comment",
         "ip_owner", "reviewer", "reviewer_decision", "reviewer_comment",
     ])
     for sheet_name, rows in old_sheets.items():
         if sheet_name in {"Tree Summary", "Instructions", "Summary", "ReviewDB"} or not rows:
             continue
-        report_cols = set(report_headers.get(sheet_name, []))
+        report_cols = set(report_headers.get(sheet_name, [])) | set(
+            (issue_columns_by_sheet or {}).get(sheet_name, set())
+        )
         extras = [col for col in rows[0].keys() if col not in report_cols and col not in ignored]
         if extras:
             extras_by_sheet[sheet_name] = extras
@@ -1677,7 +1778,7 @@ def report_ordered_sheet_columns(
 
     # Keep every script-managed column in one contiguous block immediately
     # after the review fields. A previous workbook may contain them in a scattered order.
-    columns = [column for column in columns if column not in MANAGEMENT_COLUMNS]
+    columns = [column for column in columns if column not in MANAGEMENT_COLUMNS and column not in {"Issue Status", "Time Stamp"}]
     for extra in extras_by_sheet.get(tag, []):
         if extra not in columns and extra not in MANAGEMENT_COLUMNS:
             columns.append(extra)
@@ -1716,6 +1817,8 @@ def row_to_report_sheet(row: dict[str, str], columns: list[str], index: int, use
     values.update({key: str(value) for key, value in fields.items()})
     for key in MANAGEMENT_COLUMNS:
         values[key] = row.get(key, "")
+    values["Issue Status"] = row.get("record_status", "")
+    values["Time Stamp"] = row.get("waiver_timestamp", "")
     values.update(user_extra_values.get(row.get("issue_id", ""), {}))
     return [values.get(col, "") for col in columns]
 
@@ -1780,24 +1883,88 @@ def tree_summary_matrix(rows: list[dict[str, str]]) -> list[list[str]]:
     return matrix
 
 
+def summary_formula_matrix(
+    matrix: list[list[object]],
+    sheets: dict[str, list[list[object]]],
+) -> list[list[object]]:
+    linked = [list(row) for row in matrix]
+    if len(linked) < 2:
+        return linked
+    for row in linked[1:-1]:
+        tag = str(row[1])
+        tag_rows = sheets.get(tag)
+        if not tag_rows or len(tag_rows) < 2:
+            continue
+        header = [str(value) for value in tag_rows[0]]
+        if "Owner Action" not in header or "Reviewer Decision" not in header:
+            continue
+        last_row = len(tag_rows)
+        quoted_sheet = tag.replace("'", "''")
+        count_range = f"'{quoted_sheet}'!$A$2:$A${last_row}"
+        owner_column = xlsx_col_name(header.index("Owner Action"))
+        reviewer_column = xlsx_col_name(header.index("Reviewer Decision"))
+        owner_range = f"'{quoted_sheet}'!${owner_column}$2:${owner_column}${last_row}"
+        reviewer_range = f"'{quoted_sheet}'!${reviewer_column}$2:${reviewer_column}${last_row}"
+        cached = [str(value) for value in row[2:7]]
+        row[2:7] = [
+            FormulaCell(f"COUNTA({count_range})", cached[0]),
+            FormulaCell(f'COUNTIF({owner_range},"WAIVED")', cached[1]),
+            FormulaCell(f'COUNTIF({owner_range},"UNREVIEWED")+COUNTBLANK({owner_range})', cached[2]),
+            FormulaCell(
+                f'COUNTIF({reviewer_range},"APPROVED")+COUNTIF({reviewer_range},"DISAPPROVED")',
+                cached[3],
+            ),
+            FormulaCell(f'COUNTIF({reviewer_range},"PENDING")+COUNTBLANK({reviewer_range})', cached[4]),
+        ]
+    first_summary_row = 2
+    last_summary_row = len(linked) - 1
+    total = linked[-1]
+    for column_index in range(2, 7):
+        column = xlsx_col_name(column_index)
+        total[column_index] = FormulaCell(
+            f"SUM({column}{first_summary_row}:{column}{last_summary_row})",
+            str(total[column_index]),
+        )
+    return linked
+
+
 def export_review_workbook(rows: list[dict[str, str]], xlsx_path: Path, summary_path: Path | None = None, report_excel: Path | None = None, previous_excel: Path | None = None) -> None:
     summary_rows = summarize(rows)
     sheets: OrderedDict[str, list[list[object]]] = OrderedDict()
     editable_headers_by_sheet: dict[str, set[str]] = {}
     cell_notes_by_sheet: dict[str, list[tuple[str, str, int]]] = {}
+    report_owned_headers_by_sheet: dict[str, set[str]] = {}
     sheets["Summary"] = tree_summary_matrix(rows)
     report_headers = workbook_headers(report_excel) if report_excel else OrderedDict()
-    extras_by_sheet, user_extra_values = collect_user_extra_columns(previous_excel, report_headers)
 
     by_tag: OrderedDict[str, list[dict[str, str]]] = OrderedDict()
     for row in rows:
         if row.get("record_status") == "REMOVED":
             continue
         by_tag.setdefault(row.get("tag", "UNKNOWN") or "UNKNOWN", []).append(row)
+    issue_columns_by_sheet: dict[str, set[str]] = {}
+    for tag, tag_rows in by_tag.items():
+        issue_columns = set(CORE_LINT_COLUMNS)
+        for row in tag_rows:
+            try:
+                fields = json.loads(row.get("fields_json", "{}") or "{}")
+            except json.JSONDecodeError:
+                fields = {}
+            if isinstance(fields, dict):
+                issue_columns.update(fields)
+        issue_columns_by_sheet[tag] = issue_columns
+    extras_by_sheet, user_extra_values = collect_user_extra_columns(
+        previous_excel, report_headers, issue_columns_by_sheet
+    )
     for tag, tag_rows in by_tag.items():
         columns = report_ordered_sheet_columns(tag, tag_rows, report_headers, extras_by_sheet)
         sheets[tag] = [columns] + [row_to_report_sheet(row, columns, idx, user_extra_values) for idx, row in enumerate(tag_rows, start=1)]
         editable_headers_by_sheet[tag] = {*REVIEW_SHEET_COLUMNS[1:], *extras_by_sheet.get(tag, [])}
+        report_owned_headers_by_sheet[tag] = issue_columns_by_sheet[tag] | (
+            set(report_headers.get(tag, []))
+            - set(REVIEW_SHEET_COLUMNS)
+            - set(MANAGEMENT_COLUMNS)
+        )
         if "waiver_name" in columns:
             waiver_column = columns.index("waiver_name")
             notes = [
@@ -1807,6 +1974,8 @@ def export_review_workbook(rows: list[dict[str, str]], xlsx_path: Path, summary_
             ]
             if notes:
                 cell_notes_by_sheet[tag] = notes
+
+    sheets["Summary"] = summary_formula_matrix(sheets["Summary"], sheets)
 
     removed_rows = [row for row in rows if row.get("record_status") == "REMOVED"]
     if removed_rows:
@@ -1819,11 +1988,14 @@ def export_review_workbook(rows: list[dict[str, str]], xlsx_path: Path, summary_
         ["Run make -f Makefile excel to generate report_lint.full.xlsx, then this workbook is merged from it."],
         ["IP owners edit IP Owner, Owner Action, and Owner Comment."],
         ["Reviewers edit Reviewer, Reviewer Decision, and Reviewer Comment."],
-        ["Waiver Tcl generation depends only on Owner Action = WAIVED."],
+        ["Waiver Tcl generation requires Owner Action = WAIVED and uses IP Owner for -user."],
         ["User-added columns are preserved for human notes but ignored by vc_waiver.tcl generation."],
         ["This workbook is the review source of truth."],
     ]
-    write_xlsx(xlsx_path, sheets, editable_headers_by_sheet, cell_notes_by_sheet)
+    write_xlsx(
+        xlsx_path, sheets, editable_headers_by_sheet, cell_notes_by_sheet,
+        report_owned_headers_by_sheet, read_workbook_column_layouts(previous_excel),
+    )
     preserve_workbook_drawings(previous_excel, xlsx_path)
     if summary_path:
         write_csv(summary_path, summary_rows, ["record_status", "owner_action", "tag", "count"])
@@ -1833,7 +2005,32 @@ def export_excel(csv_path: Path, xlsx_path: Path, summary_path: Path | None = No
     export_review_workbook(read_csv(csv_path), xlsx_path, summary_path, report_excel, previous_excel)
 
 
-def generate_waiver_from_rows(rows: list[dict[str, str]], output_path: Path, user: str = "") -> None:
+def waiver_owner_signature(row: dict[str, str], filter_expression: str) -> str:
+    owner_values = {
+        key: norm(row.get(key))
+        for key in (
+            "ip_owner", "owner_action", "owner_comment", "filter_mode",
+            "filter_fields", "custom_filter", "tag",
+        )
+    }
+    owner_values["filter_expression"] = filter_expression
+    payload = json.dumps(owner_values, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def refreshed_waiver_timestamp(rows: list[dict[str, str]], generated_at: datetime) -> str:
+    timestamp = generated_at.replace(microsecond=0)
+    for row in rows:
+        try:
+            previous = datetime.strptime(norm(row.get("waiver_timestamp")), "%d-%m-%Y %H:%M:%S")
+        except ValueError:
+            continue
+        if previous >= timestamp:
+            timestamp = previous + timedelta(seconds=1)
+    return timestamp.strftime("%d-%m-%Y %H:%M:%S")
+
+
+def generate_waiver_from_rows(rows: list[dict[str, str]], output_path: Path) -> None:
     lines = [
         "# Generated by sanity_lint_review.py",
         "# Source: lint_review.xlsx",
@@ -1855,23 +2052,42 @@ def generate_waiver_from_rows(rows: list[dict[str, str]], output_path: Path, use
     }
     for row in rows:
         row.pop("_waiver_note", None)
+        if (
+            row.get("owner_action", "").strip().upper() != "WAIVED"
+            and norm(row.get("waiver_source_file")).replace("\\", "/").rsplit("/", 1)[-1].lower()
+            in {"", OWNED_WAIVER_FILENAME.lower()}
+        ):
+            row["waiver_timestamp"] = ""
+            row["waiver_owner_signature"] = ""
     auto_filter_index = AutoFilterIndex(rows) if any(
         norm(row.get("filter_mode") or "AUTO").upper() == "AUTO"
         for row in eligible_rows
     ) else None
-    grouped_rows: OrderedDict[tuple[str, str, str], list[dict[str, str]]] = OrderedDict()
+    grouped_rows: OrderedDict[tuple[str, str, str, str], list[dict[str, str]]] = OrderedDict()
     for row in eligible_rows:
+        ip_owner = norm(row.get("ip_owner"))
+        if not ip_owner or ip_owner.upper() == "N/A":
+            issue = row.get("issue_id") or row.get("waiver_name") or "unknown issue"
+            raise ValueError(
+                f"IP Owner is required for waived issue {row.get('tag', '')}/{issue}"
+            )
         try:
             filter_expression = waiver_filter_expression(row, rows, auto_filter_index)
         except ValueError as error:
             issue = row.get("issue_id") or row.get("waiver_name") or "unknown issue"
             raise ValueError(f"Invalid waiver filter for {row.get('tag', '')}/{issue}: {error}") from error
-        signature = (row.get("tag", ""), filter_expression, row.get("owner_comment", ""))
+        signature = (
+            row.get("tag", ""),
+            filter_expression,
+            row.get("owner_comment", ""),
+            ip_owner,
+        )
         grouped_rows.setdefault(signature, []).append(row)
 
     used_names: set[str] = set()
-    generated_timestamp = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-    for (tag, filter_expression, comment), shared_rows in grouped_rows.items():
+    generated_at = datetime.now()
+    previous_rules = parse_waiver_tcl(output_path)
+    for (tag, filter_expression, comment, ip_owner), shared_rows in grouped_rows.items():
         primary = shared_rows[0]
         name = generated_waiver_name(primary, duplicate_waiver_names, used_names)
         for row in shared_rows:
@@ -1885,22 +2101,32 @@ def generate_waiver_from_rows(rows: list[dict[str, str]], output_path: Path, use
             )
             for row in shared_rows[1:]:
                 row["_waiver_note"] = f"Shares waiver rule {name} with primary issue {primary_id}."
-        saved_user = norm(primary.get("waiver_user"))
         saved_timestamp = norm(primary.get("waiver_timestamp"))
-        out_user = (
-            norm(user)
-            or (saved_user if saved_user.upper() != "N/A" else "")
-            or norm(os.getenv("USERNAME"))
-            or DEFAULT_WAIVER_USER
+        out_user = ip_owner
+        previous_rule = previous_rules.get(name)
+        legacy_rule_matches = bool(
+            previous_rule
+            and str(previous_rule.get("tag", "")) == tag
+            and str(previous_rule.get("filter", "")) == tcl_braced_filter(filter_expression)
+            and str(previous_rule.get("comment", "")) == comment
+            and str(previous_rule.get("user", "")) == out_user
+        )
+        signatures = [waiver_owner_signature(row, filter_expression) for row in shared_rows]
+        owner_unchanged = all(
+            norm(row.get("waiver_owner_signature")) == signature
+            if norm(row.get("waiver_owner_signature"))
+            else legacy_rule_matches
+            for row, signature in zip(shared_rows, signatures)
         )
         timestamp = (
             saved_timestamp
-            if saved_timestamp and saved_timestamp.upper() != "N/A"
-            else generated_timestamp
+            if owner_unchanged and saved_timestamp and saved_timestamp.upper() != "N/A"
+            else refreshed_waiver_timestamp(shared_rows, generated_at)
         )
-        for row in shared_rows:
+        for row, signature in zip(shared_rows, signatures):
             row["waiver_user"] = out_user
             row["waiver_timestamp"] = timestamp
+            row["waiver_owner_signature"] = signature
         # VC SpyGlass emits filters as Tcl braced words.  A quoted word is not
         # equivalent here: Tcl performs command/variable substitution inside
         # double quotes, and the LINT waiver reader expects the GUI format.
@@ -1915,8 +2141,8 @@ def generate_waiver_from_rows(rows: list[dict[str, str]], output_path: Path, use
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def generate_waiver(csv_path: Path, output_path: Path, user: str = "") -> None:
-    generate_waiver_from_rows(read_csv(csv_path), output_path, user)
+def generate_waiver(csv_path: Path, output_path: Path) -> None:
+    generate_waiver_from_rows(read_csv(csv_path), output_path)
 
 
 def import_excel_to_db(excel_path: Path, review_db_path: Path) -> list[dict[str, str]]:
@@ -1925,10 +2151,15 @@ def import_excel_to_db(excel_path: Path, review_db_path: Path) -> list[dict[str,
     return rows
 
 
-def update_review_from_reports(args: argparse.Namespace) -> list[dict[str, str]]:
+def update_review_from_reports(
+    args: argparse.Namespace,
+    previous_excel: Path | None = None,
+) -> list[dict[str, str]]:
     rows = collect_current_rows(args.full_report, args.waived_report, args.waiver_tcl)
+    if previous_excel and previous_excel.exists():
+        rows = merge_rows(read_review_workbook(previous_excel), rows)
     write_csv(args.review_db, rows)
-    export_review_workbook(rows, args.excel, args.summary)
+    export_review_workbook(rows, args.excel, args.summary, previous_excel=previous_excel)
     if args.waiver_tcl and args.waiver_audit:
         audit_waiver_rules(args.waiver_tcl, rows, args.waiver_audit)
     print(f"review rows: {len(rows)}")
@@ -1965,7 +2196,7 @@ def cmd_bootstrap(args: argparse.Namespace) -> None:
         rows = merge_rows(read_csv(args.old_db), rows)
     write_csv(args.review_db, rows)
     export_excel(args.review_db, args.excel, args.summary)
-    generate_waiver(args.review_db, args.generated_waiver, args.user)
+    generate_waiver(args.review_db, args.generated_waiver)
     if args.waiver_tcl and args.waiver_audit:
         audit_waiver_rules(args.waiver_tcl, rows, args.waiver_audit)
     print(f"review rows: {len(rows)}")
@@ -1986,8 +2217,9 @@ def cmd_update_review_excel(args: argparse.Namespace) -> None:
 
 
 def cmd_gen_waiver(args: argparse.Namespace) -> None:
+    backup = protect_waiver_before_generation(args.output, args.force)
     rows = read_review_workbook(args.excel)
-    generate_waiver_from_rows(rows, args.output, args.user)
+    generate_waiver_from_rows(rows, args.output)
     workbook_updated = False
     if not args.no_update_excel:
         try:
@@ -2001,10 +2233,13 @@ def cmd_gen_waiver(args: argparse.Namespace) -> None:
     # The second generation is intentional: the first call resolves waiver
     # metadata used by the workbook export.
     if workbook_updated:
-        generate_waiver_from_rows(rows, args.output, args.user)
+        generate_waiver_from_rows(rows, args.output)
     stamp_waiver_workbook_hash(args.output, args.excel)
+    record_generated_waiver_hash(args.output)
     print(f"read {len(rows)} rows from {args.excel}")
     print(f"wrote {args.output}")
+    if backup:
+        print(f"backup      : {backup}")
     if workbook_updated:
         print(f"updated shared-waiver notes in {args.excel}")
     elif args.no_update_excel:
@@ -2020,7 +2255,7 @@ def cmd_merge_excel(args: argparse.Namespace) -> None:
             "Run 'python sanity_lint_review.py gen_waiver' first, then run merge_excel again.\n"
             "If you intentionally want to discard those Excel changes, rerun merge_excel with --force."
         )
-    update_review_from_reports(args)
+    update_review_from_reports(args, previous_excel=args.excel if args.excel.exists() else None)
 
 
 def review_workbook_has_unexported_changes(excel: Path, waiver_tcl: Path | None) -> bool:
@@ -2054,6 +2289,51 @@ def stamp_waiver_workbook_hash(waiver_tcl: Path, excel: Path) -> None:
     waiver_tcl.write_text(content, encoding="utf-8")
 
 
+def waiver_hash_path(waiver_tcl: Path) -> Path:
+    return waiver_tcl.with_name(f"{waiver_tcl.name}.sha256")
+
+
+def protect_waiver_before_generation(waiver_tcl: Path, force: bool = False) -> Path | None:
+    """Refuse to overwrite Tcl that differs from the last generated version."""
+    if not waiver_tcl.exists():
+        return None
+    hash_path = waiver_hash_path(waiver_tcl)
+    recorded_hash = hash_path.read_text(encoding="utf-8").strip() if hash_path.exists() else ""
+    current_hash = hashlib.sha256(waiver_tcl.read_bytes()).hexdigest()
+    if recorded_hash == current_hash:
+        return None
+    if not force:
+        reason = "has changed since the last gen_waiver run" if recorded_hash else "has no saved generation hash"
+        raise SystemExit(
+            f"WARNING: {waiver_tcl} {reason}.\n"
+            "gen_waiver stopped before changing the Tcl or workbook. Review the manual edits first.\n"
+            "To intentionally replace the Tcl, rerun gen_waiver --force; a timestamped backup will be saved."
+        )
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup = waiver_tcl.with_name(f"{waiver_tcl.name}.bak.{stamp}")
+    suffix = 2
+    while backup.exists():
+        backup = waiver_tcl.with_name(f"{waiver_tcl.name}.bak.{stamp}.{suffix}")
+        suffix += 1
+    shutil.copy2(waiver_tcl, backup)
+    return backup
+
+
+def record_generated_waiver_hash(waiver_tcl: Path) -> None:
+    hash_path = waiver_hash_path(waiver_tcl)
+    digest = hashlib.sha256(waiver_tcl.read_bytes()).hexdigest()
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", dir=hash_path.parent,
+        prefix=f".{hash_path.name}.", suffix=".tmp", delete=False,
+    ) as temporary:
+        temporary.write(f"{digest}\n")
+        temporary_path = Path(temporary.name)
+    try:
+        os.replace(temporary_path, hash_path)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
 def cmd_parse(args: argparse.Namespace) -> None:
     rows = collect_current_rows(args.full_report, args.waived_report, args.waiver_tcl)
     write_csv(args.output, rows)
@@ -2079,13 +2359,13 @@ def cmd_import_excel(args: argparse.Namespace) -> None:
 
 
 def cmd_generate(args: argparse.Namespace) -> None:
-    generate_waiver(args.review_db, args.output, args.user)
+    generate_waiver(args.review_db, args.output)
     print(f"wrote {args.output}")
 
 
 def cmd_generate_from_excel(args: argparse.Namespace) -> None:
     rows = import_excel_to_db(args.excel, args.review_db)
-    generate_waiver(args.review_db, args.output, args.user)
+    generate_waiver(args.review_db, args.output)
     print(f"imported {len(rows)} rows from {args.excel}")
     print(f"wrote {args.output}")
 
@@ -2119,7 +2399,10 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("gen_waiver", help="Import lint_review.xlsx and generate vc_waiver.tcl only.")
     p.add_argument("--excel", type=Path, default=Path("outputs/lint_review.xlsx"))
     p.add_argument("--output", type=Path, default=Path("vc_waiver.tcl"))
-    p.add_argument("--user", default="")
+    p.add_argument(
+        "--force", action="store_true",
+        help="Replace a manually changed or untracked Tcl after saving a timestamped backup.",
+    )
     p.add_argument(
         "--no-update-excel",
         action="store_true",

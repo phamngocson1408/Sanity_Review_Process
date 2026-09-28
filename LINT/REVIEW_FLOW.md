@@ -24,11 +24,11 @@ This document describes the intended review loop for LINT sanity issues and waiv
 - IP-owner fields are `IP Owner`, `Owner Action`, and `Owner Comment`.
 - Reviewer fields are `Reviewer`, `Reviewer Decision`, and `Reviewer Comment`.
 - Report-owned columns are refreshed from `report_lint.full.xlsx`.
-- Header colors show ownership: green means editable, gray means report-owned, and pale yellow identifies script-managed metadata.
+- Header colors show ownership: green means editable and gray means report-owned. Script-managed metadata columns are hidden by default except `Issue Status` and `Time Stamp`.
 - Filters are enabled on each sheet. `Owner Action` and `Reviewer Decision` provide dropdown lists.
 - Excel Notes on status headers describe their supported values.
 - Waiver filters support `AUTO`, `FIELDS`, and `CUSTOM` modes.
-- Issue change state is tracked with `record_status`.
+- Issue change state is shown in the `Issue Status` column (`record_status` internally).
 
 ## Directory Layout
 
@@ -127,6 +127,85 @@ This avoids depending on report indentation when matching a statement. `CUSTOM` 
 
 The script reports an error instead of generating an unfiltered or invalid waiver when the selected mode cannot produce a valid filter.
 
+### Filter syntax and examples
+
+Only the column selected by `Filter Mode` is used. `Filter Fields` is ignored unless the mode is `FIELDS`; `Custom Filter` is ignored unless the mode is `CUSTOM`. Leave both columns empty when using `AUTO`.
+
+#### Filter Fields
+
+`Filter Fields` is a comma-separated list. Each item has one of these forms:
+
+```text
+FieldName
+FieldName=value
+```
+
+- `FieldName` uses that field's value from the current workbook row.
+- `FieldName=value` overrides the row value.
+- Field names may be qualified, for example `PropertyList:LintPropertyName`.
+- An override containing `*` or `?` generates the wildcard operator `=~`; otherwise it generates the exact-match operator `==`.
+- If an override value contains a comma, quote the complete CSV item, for example `Goal, "Statement=call(a, b)"`.
+- Do not write Tcl operators such as `==`, `=~`, or `AND` in this column. Those belong in `Custom Filter`.
+
+Example using values from the current row:
+
+```text
+Filter Mode: FIELDS
+Filter Fields: Goal, Module, Signal
+```
+
+If the row contains `Goal=BOS_LINT_RULE`, `Module=AESDMA_BD`, and `Signal=I_ENABLE`, the generated expression is:
+
+```tcl
+(Goal == "BOS_LINT_RULE") AND (Module == "AESDMA_BD") AND (Signal == "I_ENABLE")
+```
+
+Example with overridden wildcard values:
+
+```text
+Filter Mode: FIELDS
+Filter Fields: Goal, Module=AESDMA_*, Signal=I_*
+```
+
+generates:
+
+```tcl
+(Goal == "BOS_LINT_RULE") AND (Module =~ "AESDMA_*") AND (Signal =~ "I_*")
+```
+
+Example with a qualified field name:
+
+```text
+Filter Mode: FIELDS
+Filter Fields: Goal, PropertyList:LintPropertyName=Property_142
+```
+
+generates:
+
+```tcl
+(Goal == "BOS_LINT_RULE") AND (PropertyList:LintPropertyName == "Property_142")
+```
+
+#### Custom Filter
+
+`Custom Filter` contains the complete VC Static filter expression. Enter only the expression, without `-filter` and without the outer Tcl braces added by `waive_violation`.
+
+Exact-match example:
+
+```text
+Filter Mode: CUSTOM
+Custom Filter: (Goal == "BOS_LINT_RULE") AND (Module == "AESDMA_BD")
+```
+
+Wildcard and statement example:
+
+```text
+Filter Mode: CUSTOM
+Custom Filter: (Goal == "BOS_LINT_RULE") AND (Module =~ "AESDMA_*") AND (Statement =~ "*if (enable)*")
+```
+
+Use `==` for an exact match and `=~` for wildcard matching. A custom expression is emitted unchanged, so wildcard handling and field selection are the owner's responsibility. The expression must be non-empty and have balanced parentheses.
+
 6. The reviewer evaluates the IP owner's handling.
 
 The reviewer updates:
@@ -139,7 +218,9 @@ Reviewer Comment
 
 The reviewer decision records peer-review results only. It does not control waiver Tcl generation.
 
-Green headers are user-editable. Gray headers are report-owned and should not be edited. Pale-yellow headers identify script-managed metadata and should not be edited manually. Each sheet has filters enabled.
+Green headers are user-editable. Gray issue-field headers are report-owned and have a `Do not change` note. Script-managed metadata columns are hidden by default except `Issue Status` and `Time Stamp`; they can be unhidden in Excel if needed. Each sheet has filters enabled.
+
+Column widths can be adjusted in Excel. The script preserves those widths on later `merge_excel` and `gen_waiver` runs, matching columns by header within each sheet.
 
 The reviewer may also add new columns for human notes. Those columns are preserved in `lint_review.xlsx`, but ignored by `vc_waiver.tcl` generation.
 
@@ -155,7 +236,18 @@ This reads reviewer edits from `outputs/lint_review.xlsx`, then generates:
 
 ```text
 vc_waiver.tcl
+vc_waiver.tcl.sha256
 ```
+
+The `.sha256` file records the exact Tcl written by the last successful `gen_waiver`. Before replacing an existing Tcl file, the script compares its current content with this hash. If the Tcl was edited manually, or an older Tcl has no saved hash, `gen_waiver` stops before changing the Tcl or workbook. Review those edits and move any waiver decisions that must be retained into `lint_review.xlsx`.
+
+To intentionally replace the Tcl after reviewing it:
+
+```powershell
+python sanity_lint_review.py gen_waiver --force
+```
+
+`--force` saves the old Tcl beside it as `vc_waiver.tcl.bak.YYYYMMDD_HHMMSS` before overwriting. Keep `vc_waiver.tcl` and `vc_waiver.tcl.sha256` together when committing or copying the generated waiver to another workspace. A backup is a recovery copy; manual edits in it are not merged into Excel automatically.
 
 For a large workbook, use the fast path when only the Tcl output is needed:
 
@@ -164,7 +256,7 @@ python sanity_lint_review.py gen_waiver --no-update-excel
 ```
 
 This skips rewriting `lint_review.xlsx`, including generated waiver metadata and
-shared-waiver cell notes. It does not change the generated `vc_waiver.tcl`.
+shared-waiver cell notes. It still replaces `vc_waiver.tcl`, subject to the same hash check.
 
 8. Run sanity check again with the new `vc_waiver.tcl`.
 
@@ -180,7 +272,7 @@ The script merges the new reports with the previous `lint_review.xlsx`, so old c
 
 ## Status Meaning
 
-`record_status` is the issue state based on the latest sanity reports.
+`Issue Status` is the issue state based on the latest sanity reports (`record_status` in the internal CSV).
 
 ```text
 NEW
@@ -358,7 +450,7 @@ generates:
 (Statement =~ "*assign ready = valid;*")
 ```
 
-Each generated waiver also contains `-user` and `-timestamp` metadata. The script preserves valid values already stored in the workbook. If they are missing or equal to `N/A`, it uses the explicit command-line user when supplied, then the current `USERNAME`, and finally `sanity_lint_review`; a missing timestamp is replaced with the generation time in `DD-MM-YYYY HH:MM:SS` format. The resolved values are written back to the in-memory rows used for workbook output.
+Each generated waiver also contains `-user` and `-timestamp` metadata. The `-user` value is always taken from the row's `IP Owner`; `gen_waiver` stops with an error if an eligible `WAIVED` row has an empty or `N/A` IP Owner. Rules with otherwise identical filters and comments are kept separate when their IP Owners differ. The internal `waiver_user` metadata remains readable for backward compatibility but is not displayed as an Excel column. `Time Stamp` shows the generated `-timestamp` in `DD-MM-YYYY HH:MM:SS` format. It changes on the next `gen_waiver` when the owner changes `IP Owner`, `Owner Comment`, or a filter setting for that issue. It stays the same on repeated generation without owner changes and is cleared when an issue is no longer `WAIVED`. The script stores a hidden signature to detect those changes; for older workbooks without one, it compares the existing Tcl rule when available. Issues sharing one waiver rule share its timestamp.
 
 ## Redundant Waiver Review
 
@@ -397,4 +489,4 @@ Keep `vc_waiver.tcl` while deleting DB/Excel/report artifacts:
 python sanity_lint_review.py clean --keep-waiver
 ```
 
-The clean command does not delete `reports/` and does not delete `vc_waiver.tcl_old`.
+The clean command does not delete `reports/`, `vc_waiver.tcl_old`, or timestamped `vc_waiver.tcl.bak.*` recovery copies. It removes `vc_waiver.tcl.sha256` together with `vc_waiver.tcl` unless `--keep-waiver` is used.

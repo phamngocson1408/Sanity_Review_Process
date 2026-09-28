@@ -1,32 +1,42 @@
 import unittest
+import argparse
+import hashlib
 import tempfile
 import tkinter
 import zipfile
-import os
 import json
 from unittest.mock import patch
 from pathlib import Path
 
 from sanity_lint_review import (
     AutoFilterIndex,
+    ColumnWidthLayout,
+    FormulaCell,
     WORKBOOK_MANAGEMENT_COLUMNS,
     filter_expr,
     format_filter_fields_spec,
     generate_waiver_from_rows,
+    collect_user_extra_columns,
+    cmd_gen_waiver,
+    export_review_workbook,
     collect_current_rows,
     merge_rows,
     normalize_record_status,
     parse_filter_fields_spec,
     parse_filter,
     parse_waiver_tcl,
+    read_review_workbook,
+    read_workbook_column_layouts,
     review_workbook_has_unexported_changes,
     report_ordered_sheet_columns,
     sheet_xml,
     sheet_tab_color,
+    summary_formula_matrix,
     stamp_waiver_workbook_hash,
     tcl_braced_filter,
     tcl_double_quote,
     tree_summary_matrix,
+    update_review_from_reports,
     waiver_filter_expression,
     write_xlsx,
 )
@@ -111,7 +121,10 @@ class WorkbookColumnTests(unittest.TestCase):
             write_xlsx(path, sheets)
             with zipfile.ZipFile(path) as workbook:
                 rule_sheet = workbook.read("xl/worksheets/sheet2.xml").decode("utf-8")
+                workbook_xml = workbook.read("xl/workbook.xml").decode("utf-8")
         self.assertIn('<sheetPr><tabColor rgb="FFFFA500"/></sheetPr>', rule_sheet)
+        self.assertIn('calcMode="auto"', workbook_xml)
+        self.assertIn('fullCalcOnLoad="1"', workbook_xml)
 
     def test_summary_is_sorted_and_colorized_by_severity(self):
         rows = [
@@ -132,9 +145,24 @@ class WorkbookColumnTests(unittest.TestCase):
         self.assertEqual(matrix[4][2:], ["1", "0", "1", "0", "1"])
         self.assertEqual(matrix[-1], ["TOTAL", "", "4", "1", "2", "2", "2"])
         xml = sheet_xml(matrix, colorize_severity_rows=True)
-        self.assertEqual(xml.count(' s="4"'), len(matrix[0]) * 2)
-        self.assertEqual(xml.count(' s="5"'), len(matrix[0]))
-        self.assertEqual(xml.count(' s="6"'), len(matrix[0]))
+        self.assertEqual(xml.count(' s="4"'), 2)
+        self.assertEqual(xml.count(' s="5"'), 1)
+        self.assertEqual(xml.count(' s="6"'), 1)
+        self.assertIn('<c r="B2" t="inlineStr">', xml)
+        self.assertNotIn(' width="', xml)
+
+    def test_editable_columns_have_no_script_assigned_widths(self):
+        rows = [
+            ["No.", "IP Owner", "Owner Action", "Owner Comment", "Filter Mode",
+             "Filter Fields", "Custom Filter", "Reviewer", "Reviewer Decision",
+             "Reviewer Comment", "issue_id", "Tag"],
+            ["1", "owner", "WAIVED", "reason", "AUTO", "", "", "reviewer",
+             "PENDING", "", "id", "W551"],
+        ]
+        editable = set(rows[0][1:10])
+        xml = sheet_xml(rows, editable_headers=editable)
+        self.assertNotIn(' width="', xml)
+        self.assertIn('<col min="11" max="11" hidden="1"/>', xml)
 
     def test_summary_has_one_row_per_tag_and_uses_highest_severity(self):
         rows = [
@@ -143,6 +171,27 @@ class WorkbookColumnTests(unittest.TestCase):
         ]
         matrix = tree_summary_matrix(rows)
         self.assertEqual(matrix[1], ["warning", "MIXED", "2", "1", "1", "1", "1"])
+
+    def test_summary_formulas_link_to_rule_sheet(self):
+        matrix = [
+            ["Severity", "Tag", "Count", "Waived", "Unreviewed", "Confirmed", "Pending by reviewer"],
+            ["warning", "W551", "2", "1", "1", "1", "1"],
+            ["TOTAL", "", "2", "1", "1", "1", "1"],
+        ]
+        sheets = {
+            "Summary": matrix,
+            "W551": [
+                ["No.", "Owner Action", "Reviewer Decision"],
+                ["1", "WAIVED", "APPROVED"],
+                ["2", "UNREVIEWED", "PENDING"],
+            ],
+        }
+        linked = summary_formula_matrix(matrix, sheets)
+        self.assertEqual(linked[1][2], FormulaCell("COUNTA('W551'!$A$2:$A$3)", "2"))
+        self.assertEqual(linked[1][3], FormulaCell('COUNTIF(\'W551\'!$B$2:$B$3,"WAIVED")', "1"))
+        self.assertEqual(linked[2][6], FormulaCell("SUM(G2:G2)", "1"))
+        xml = sheet_xml(linked, colorize_severity_rows=True)
+        self.assertIn("<f>COUNTA('W551'!$A$2:$A$3)</f><v>2</v>", xml)
 
     def test_script_managed_columns_are_grouped_after_review_fields(self):
         report_headers = {
@@ -175,10 +224,49 @@ class WorkbookColumnTests(unittest.TestCase):
 
         self.assertEqual(xml.count(' s="3"'), len(WORKBOOK_MANAGEMENT_COLUMNS))
         self.assertNotIn(' s="4"', xml)
+        self.assertEqual(xml.count(' hidden="1"'), len(WORKBOOK_MANAGEMENT_COLUMNS) - 2)
+        self.assertNotIn(' width="', xml)
+        self.assertIn("Issue Status", WORKBOOK_MANAGEMENT_COLUMNS)
+        self.assertIn("Time Stamp", WORKBOOK_MANAGEMENT_COLUMNS)
+        self.assertNotIn("record_status", WORKBOOK_MANAGEMENT_COLUMNS)
+        self.assertNotIn("waiver_timestamp", WORKBOOK_MANAGEMENT_COLUMNS)
+
+    def test_issue_headers_are_gray_with_do_not_change_notes(self):
+        rows = [["IP Owner", "Tag", "Goal", "Reviewer Note"], ["owner", "W551", "LINT", "check"]]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "review.xlsx"
+            write_xlsx(
+                path, {"W551": rows},
+                {"W551": {"IP Owner", "Reviewer Note"}},
+                report_owned_headers_by_sheet={"W551": {"Tag", "Goal"}},
+            )
+            with zipfile.ZipFile(path) as workbook:
+                sheet = workbook.read("xl/worksheets/sheet1.xml").decode("utf-8")
+                comments = workbook.read("xl/comments1.xml").decode("utf-8")
+
+        self.assertIn('<c r="A1" s="1"', sheet)
+        self.assertIn('<c r="B1" s="2"', sheet)
+        self.assertIn('<c r="C1" s="2"', sheet)
+        self.assertIn('<c r="D1" s="1"', sheet)
+        self.assertEqual(comments.count("Do not change"), 2)
+
+    def test_report_fields_are_not_treated_as_user_extra_columns(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "review.xlsx"
+            write_xlsx(
+                path,
+                {"W551": [["Tag", "Goal", "Reviewer Note"], ["W551", "LINT", "check"]]},
+            )
+            extras, values = collect_user_extra_columns(
+                path, {}, {"W551": {"Tag", "Goal"}}
+            )
+
+        self.assertEqual(extras["W551"], ["Reviewer Note"])
+        self.assertEqual(next(iter(values.values())), {"Reviewer Note": "check"})
 
     def test_status_headers_have_excel_notes(self):
         rows = [
-            ["Owner Action", "Reviewer Decision", "record_status", "source_report", "Tag"],
+            ["Owner Action", "Reviewer Decision", "Issue Status", "source_report", "Tag"],
             ["UNREVIEWED", "PENDING", "NEW", "full", "W551"],
         ]
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -197,6 +285,22 @@ class WorkbookColumnTests(unittest.TestCase):
         self.assertIn('<legacyDrawing r:id="rId2"/>', sheet)
         self.assertIn("width:220pt;height:100pt", note_shapes)
 
+    def test_issue_status_is_visible_and_imports_as_record_status(self):
+        rows = [["Issue Status", "Time Stamp", "Tag", "Goal", "Module", "FileName", "LineNumber"],
+                ["CHANGED", "01-01-2025 12:00:00", "W551", "LINT", "top", "top.sv", "12"]]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "review.xlsx"
+            write_xlsx(path, {"W551": rows})
+            with zipfile.ZipFile(path) as workbook:
+                sheet = workbook.read("xl/worksheets/sheet1.xml").decode("utf-8")
+            imported = read_review_workbook(path)
+
+        self.assertNotIn(' width="', sheet)
+        self.assertEqual(imported[0]["record_status"], "CHANGED")
+        self.assertEqual(imported[0]["waiver_timestamp"], "01-01-2025 12:00:00")
+        self.assertNotIn("Issue Status", json.loads(imported[0]["fields_json"]))
+        self.assertNotIn("Time Stamp", json.loads(imported[0]["fields_json"]))
+
 
 class RecordStatusTests(unittest.TestCase):
     @staticmethod
@@ -205,6 +309,7 @@ class RecordStatusTests(unittest.TestCase):
             "issue_id": issue_id,
             "record_status": status,
             "owner_action": "UNREVIEWED",
+            "ip_owner": "owner_a",
             "reviewer_decision": "PENDING",
             "tag": "W551",
             "goal": "LINT",
@@ -214,6 +319,60 @@ class RecordStatusTests(unittest.TestCase):
             "hierarchy": "top",
             "object": object_name or issue_id,
         }
+
+    def test_timestamp_and_owner_signature_survive_workbook_round_trip(self):
+        row = self.row("waive")
+        row.update({
+            "owner_action": "WAIVED",
+            "waiver_timestamp": "01-01-2025 12:00:00",
+            "waiver_owner_signature": "saved-signature",
+            "fields_json": '{"Tag":"W551","Goal":"LINT","Module":"top","FileName":"top.sv","LineNumber":"1"}',
+        })
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "review.xlsx"
+            export_review_workbook([row], path)
+            restored = read_review_workbook(path)[0]
+            with zipfile.ZipFile(path) as workbook:
+                sheet = workbook.read("xl/worksheets/sheet2.xml").decode("utf-8")
+
+        self.assertEqual(restored["waiver_timestamp"], "01-01-2025 12:00:00")
+        self.assertEqual(restored["waiver_owner_signature"], "saved-signature")
+        self.assertIn("Time Stamp", sheet)
+        self.assertIn("waiver_owner_signature", sheet)
+
+    def test_export_preserves_manual_column_widths_by_sheet_and_header(self):
+        row = self.row("same")
+        row["fields_json"] = '{"Tag":"W551","Goal":"LINT","Module":"top"}'
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            previous = temp / "previous.xlsx"
+            output = temp / "updated.xlsx"
+            write_xlsx(
+                previous,
+                {
+                    "Summary": [["Severity", "Tag"], ["warning", "W551"]],
+                    "W551": [["record_status", "IP Owner", "Tag"], ["UNCHANGED", "owner_a", "W551"]],
+                },
+                column_layouts_by_sheet={
+                    "Summary": ColumnWidthLayout(
+                        {"Tag": {"width": "37.5", "customWidth": "1"}}, {},
+                        {"defaultRowHeight": "15", "defaultColWidth": "12"},
+                    ),
+                    "W551": ColumnWidthLayout(
+                        {
+                            "record_status": {"width": "24.5", "customWidth": "1"},
+                            "IP Owner": {"width": "19.25", "customWidth": "1"},
+                        }, {}, {},
+                    ),
+                },
+            )
+            export_review_workbook([row], output, previous_excel=previous)
+            layouts = read_workbook_column_layouts(output)
+
+        self.assertEqual(layouts["Summary"].by_header["Tag"]["width"], "37.5")
+        self.assertEqual(layouts["Summary"].sheet_format["defaultColWidth"], "12")
+        self.assertEqual(layouts["W551"].by_header["Issue Status"]["width"], "24.5")
+        self.assertEqual(layouts["W551"].by_header["IP Owner"]["width"], "19.25")
 
     def test_missing_workbook_has_no_unexported_changes(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -259,6 +418,70 @@ class RecordStatusTests(unittest.TestCase):
             waiver.write_text("# Generated by older version\n", encoding="utf-8")
             self.assertTrue(review_workbook_has_unexported_changes(excel, waiver))
 
+    def test_gen_waiver_blocks_untracked_tcl_before_reading_workbook(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            excel = temp / "review.xlsx"
+            excel.write_bytes(b"unchanged workbook")
+            waiver = temp / "vc_waiver.tcl"
+            waiver.write_text("# manual rule\n", encoding="utf-8")
+            args = argparse.Namespace(excel=excel, output=waiver, force=False, no_update_excel=True)
+            with patch("sanity_lint_review.read_review_workbook") as read_workbook:
+                with self.assertRaisesRegex(SystemExit, "no saved generation hash"):
+                    cmd_gen_waiver(args)
+            read_workbook.assert_not_called()
+            self.assertEqual(waiver.read_text(encoding="utf-8"), "# manual rule\n")
+            self.assertEqual(excel.read_bytes(), b"unchanged workbook")
+            row = self.row("waive")
+            row.update({
+                "owner_action": "WAIVED", "owner_comment": "Reason",
+                "filter_mode": "CUSTOM", "custom_filter": '(Module == "top")',
+            })
+            args.force = True
+            with patch("sanity_lint_review.read_review_workbook", return_value=[row]):
+                cmd_gen_waiver(args)
+            backups = list(temp.glob("vc_waiver.tcl.bak.*"))
+            self.assertEqual(len(backups), 1)
+            self.assertEqual(backups[0].read_text(encoding="utf-8"), "# manual rule\n")
+            self.assertTrue((temp / "vc_waiver.tcl.sha256").exists())
+
+    def test_gen_waiver_force_backs_up_manual_edit_and_records_hash(self):
+        row = self.row("waive")
+        row.update({
+            "owner_action": "WAIVED", "owner_comment": "Reason",
+            "filter_mode": "CUSTOM", "custom_filter": '(Module == "top")',
+        })
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            excel = temp / "review.xlsx"
+            excel.write_bytes(b"review workbook")
+            waiver = temp / "vc_waiver.tcl"
+            args = argparse.Namespace(excel=excel, output=waiver, force=False, no_update_excel=True)
+            with patch("sanity_lint_review.read_review_workbook", return_value=[row]):
+                cmd_gen_waiver(args)
+                first_generated = waiver.read_bytes()
+                self.assertEqual(
+                    (temp / "vc_waiver.tcl.sha256").read_text(encoding="utf-8").strip(),
+                    hashlib.sha256(first_generated).hexdigest(),
+                )
+                cmd_gen_waiver(args)
+                self.assertEqual(waiver.read_bytes(), first_generated)
+                waiver.write_bytes(first_generated + b"# manual edit\n")
+                with self.assertRaisesRegex(SystemExit, "has changed since"):
+                    cmd_gen_waiver(args)
+                self.assertEqual(waiver.read_bytes(), first_generated + b"# manual edit\n")
+                args.force = True
+                cmd_gen_waiver(args)
+
+            backups = list(temp.glob("vc_waiver.tcl.bak.*"))
+            self.assertEqual(len(backups), 1)
+            self.assertEqual(backups[0].read_bytes(), first_generated + b"# manual edit\n")
+            self.assertNotIn(b"# manual edit", waiver.read_bytes())
+            self.assertEqual(
+                (temp / "vc_waiver.tcl.sha256").read_text(encoding="utf-8").strip(),
+                hashlib.sha256(waiver.read_bytes()).hexdigest(),
+            )
+
     def test_legacy_active_and_waived_statuses_become_unchanged(self):
         self.assertEqual(normalize_record_status("ACTIVE"), "UNCHANGED")
         self.assertEqual(normalize_record_status("WAIVED"), "UNCHANGED")
@@ -278,6 +501,41 @@ class RecordStatusTests(unittest.TestCase):
         self.assertEqual(statuses["replacement"], "CHANGED")
         self.assertEqual(statuses["new"], "NEW")
         self.assertEqual(statuses["removed"], "REMOVED")
+
+    def test_update_from_reports_preserves_existing_auto_filter_mode(self):
+        old = self.row("same")
+        old.update({"filter_mode": "AUTO", "filter_fields": "", "custom_filter": ""})
+        current = self.row("same")
+        current.update({
+            "filter_mode": "CUSTOM",
+            "filter_fields": "",
+            "custom_filter": '(Module == "top")',
+        })
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            previous_excel = temp / "review.xlsx"
+            previous_excel.touch()
+            args = type("Args", (), {
+                "full_report": temp / "full.log",
+                "waived_report": temp / "waived.log",
+                "waiver_tcl": None,
+                "review_db": temp / "review.csv",
+                "excel": temp / "output.xlsx",
+                "summary": temp / "summary.csv",
+                "waiver_audit": None,
+            })()
+            with (
+                patch("sanity_lint_review.collect_current_rows", return_value=[current]),
+                patch("sanity_lint_review.read_review_workbook", return_value=[old]),
+                patch("sanity_lint_review.write_csv"),
+                patch("sanity_lint_review.export_review_workbook") as export,
+            ):
+                merged = update_review_from_reports(args, previous_excel=previous_excel)
+
+        self.assertEqual(merged[0]["filter_mode"], "AUTO")
+        self.assertEqual(merged[0]["custom_filter"], "")
+        self.assertEqual(export.call_args.args[0][0]["filter_mode"], "AUTO")
+        self.assertEqual(export.call_args.kwargs["previous_excel"], previous_excel)
 
     def test_waiver_generation_depends_only_on_owner_action(self):
         row = self.row("waive")
@@ -299,29 +557,112 @@ class RecordStatusTests(unittest.TestCase):
         self.assertIn("W551_test", generated)
         self.assertIn('-filter {(Module =~ "top_*")}', generated)
 
-    def test_waiver_generation_supplies_default_user_and_timestamp(self):
+    def test_waiver_generation_uses_ip_owner_and_supplies_timestamp(self):
         row = self.row("waive")
         row.update({
             "owner_action": "WAIVED",
             "owner_comment": "Reason",
             "filter_mode": "CUSTOM",
             "custom_filter": '(Module == "top")',
-            "waiver_user": "",
+            "ip_owner": "owner_a",
+            "waiver_user": "legacy_user",
             "waiver_timestamp": "N/A",
         })
         with tempfile.TemporaryDirectory() as temp_dir:
             output = Path(temp_dir) / "waiver.tcl"
-            with patch.dict(os.environ, {"USERNAME": ""}):
-                generate_waiver_from_rows([row], output)
+            generate_waiver_from_rows([row], output)
             generated = output.read_text(encoding="utf-8")
 
-        self.assertIn("-user { sanity_lint_review }", generated)
+        self.assertIn("-user { owner_a }", generated)
         self.assertRegex(
             generated,
             r"-timestamp \{ \d{2}-\d{2}-\d{4} \d{2}:\d{2}:\d{2} \}",
         )
-        self.assertEqual(row["waiver_user"], "sanity_lint_review")
+        self.assertEqual(row["waiver_user"], "owner_a")
         self.assertNotEqual(row["waiver_timestamp"], "N/A")
+
+    def test_timestamp_changes_only_when_owner_changes_issue(self):
+        row = self.row("waive")
+        row.update({
+            "owner_action": "WAIVED",
+            "owner_comment": "Reason",
+            "filter_mode": "CUSTOM",
+            "custom_filter": '(Module == "top")',
+            "waiver_timestamp": "01-01-2020 00:00:00",
+        })
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "waiver.tcl"
+            generate_waiver_from_rows([row], output)
+            first_timestamp = row["waiver_timestamp"]
+            first_signature = row["waiver_owner_signature"]
+            row["reviewer_comment"] = "Reviewed"
+            generate_waiver_from_rows([row], output)
+            self.assertEqual(row["waiver_timestamp"], first_timestamp)
+            row["owner_comment"] = "Updated reason"
+            generate_waiver_from_rows([row], output)
+            changed_timestamp = row["waiver_timestamp"]
+            self.assertNotEqual(changed_timestamp, first_timestamp)
+            self.assertNotEqual(row["waiver_owner_signature"], first_signature)
+            row["ip_owner"] = "owner_b"
+            generate_waiver_from_rows([row], output)
+            self.assertNotEqual(row["waiver_timestamp"], changed_timestamp)
+            self.assertIn("-user { owner_b }", output.read_text(encoding="utf-8"))
+            row["owner_action"] = "FIXED"
+            generate_waiver_from_rows([row], output)
+            self.assertEqual(row["waiver_timestamp"], "")
+            self.assertNotIn("waive_violation -add", output.read_text(encoding="utf-8"))
+
+    def test_legacy_unchanged_rule_keeps_timestamp_on_first_generation(self):
+        row = self.row("waive")
+        row.update({
+            "owner_action": "WAIVED",
+            "owner_comment": "Reason",
+            "filter_mode": "CUSTOM",
+            "custom_filter": '(Module == "top")',
+            "waiver_timestamp": "01-01-2020 00:00:00",
+        })
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "waiver.tcl"
+            generate_waiver_from_rows([row], output)
+            timestamp = row["waiver_timestamp"]
+            row.pop("waiver_owner_signature")
+            generate_waiver_from_rows([row], output)
+
+        self.assertEqual(row["waiver_timestamp"], timestamp)
+
+    def test_waiver_generation_requires_ip_owner(self):
+        row = self.row("waive")
+        row.update({
+            "owner_action": "WAIVED",
+            "ip_owner": "",
+            "owner_comment": "Reason",
+            "filter_mode": "CUSTOM",
+            "custom_filter": '(Module == "top")',
+        })
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "waiver.tcl"
+            with self.assertRaisesRegex(ValueError, "IP Owner is required"):
+                generate_waiver_from_rows([row], output)
+
+    def test_same_rule_with_different_ip_owners_is_not_grouped(self):
+        first = self.row("first")
+        second = self.row("second")
+        second["ip_owner"] = "owner_b"
+        for row in (first, second):
+            row.update({
+                "owner_action": "WAIVED",
+                "owner_comment": "Shared reason",
+                "filter_mode": "CUSTOM",
+                "custom_filter": '(Module == "top")',
+            })
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "waiver.tcl"
+            generate_waiver_from_rows([first, second], output)
+            generated = output.read_text(encoding="utf-8")
+
+        self.assertEqual(generated.count("waive_violation -add"), 2)
+        self.assertIn("-user { owner_a }", generated)
+        self.assertIn("-user { owner_b }", generated)
 
     def test_items_owned_by_another_waiver_file_are_never_generated(self):
         row = self.row("external-waiver")
