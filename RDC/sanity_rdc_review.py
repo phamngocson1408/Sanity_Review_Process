@@ -128,6 +128,12 @@ AUTO_FILTER_PRIORITY = [
 NS_MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 NS_PACKAGE_REL = "http://schemas.openxmlformats.org/package/2006/relationships"
+SEVERITY_TAB_COLORS = {
+    "fatal": "FFFF0000",
+    "error": "FFFF0000",
+    "warning": "FFFFA500",
+    "info": "FF00B050",
+}
 NS_CONTENT_TYPES = "http://schemas.openxmlformats.org/package/2006/content-types"
 
 REVIEW_SHEET_COLUMNS = [
@@ -916,7 +922,46 @@ def safe_sheet_name(name: str, used: set[str]) -> str:
     return candidate
 
 
-def sheet_xml(rows: list[list[object]], editable_headers: set[str] | None = None, has_comments: bool = False) -> str:
+def sheet_tab_color(
+    name: str,
+    rows: list[list[object]],
+    summary_rows: list[list[object]] | None = None,
+) -> str | None:
+    if name.casefold() in {"tree summary", "summary", "instructions", "reviewdb", "removed"} or len(rows) < 2:
+        return None
+    header = [str(value).strip().casefold() for value in rows[0]]
+    severities: set[str] = set()
+    if "severity" in header:
+        severity_index = header.index("severity")
+        severities = {
+            str(row[severity_index]).strip().casefold()
+            for row in rows[1:]
+            if severity_index < len(row) and str(row[severity_index]).strip()
+        }
+    if not severities and summary_rows:
+        summary_header = [str(value).strip().casefold() for value in summary_rows[0]]
+        if "tag" in summary_header and "severity" in summary_header:
+            tag_index = summary_header.index("tag")
+            severity_index = summary_header.index("severity")
+            severities = {
+                str(row[severity_index]).strip().casefold()
+                for row in summary_rows[1:]
+                if max(tag_index, severity_index) < len(row)
+                and str(row[tag_index]).strip().casefold() == name.strip().casefold()
+                and str(row[severity_index]).strip()
+            }
+    return next(
+        (SEVERITY_TAB_COLORS[severity] for severity in ("fatal", "error", "warning", "info") if severity in severities),
+        None,
+    )
+
+
+def sheet_xml(
+    rows: list[list[object]],
+    editable_headers: set[str] | None = None,
+    has_comments: bool = False,
+    tab_color: str | None = None,
+) -> str:
     if not rows:
         rows = [[""]]
     editable_headers = editable_headers or set()
@@ -929,9 +974,13 @@ def sheet_xml(rows: list[list[object]], editable_headers: set[str] | None = None
     out = [
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
         f'<worksheet xmlns="{NS_MAIN}" xmlns:r="{NS_REL}">',
+    ]
+    if tab_color:
+        out.append(f'<sheetPr><tabColor rgb="{tab_color}"/></sheetPr>')
+    out.extend([
         "<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>",
         "<cols>",
-    ]
+    ])
     widths = {
         1: 7,
         2: 18,
@@ -1040,6 +1089,7 @@ def write_xlsx(
     editable_headers_by_sheet = editable_headers_by_sheet or {}
     cell_notes_by_sheet = cell_notes_by_sheet or {}
     sheet_items = list(sheets.items())
+    summary_rows = sheets.get("Tree Summary", [])
     comments_by_sheet = [
         header_comments(rows) + cell_notes_by_sheet.get(name, [])
         for name, rows in sheet_items
@@ -1133,7 +1183,15 @@ def write_xlsx(
         zf.writestr("xl/styles.xml", styles)
         for idx, (_name, rows) in enumerate(sheet_items, start=1):
             comments = comments_by_sheet[idx - 1]
-            zf.writestr(f"xl/worksheets/sheet{idx}.xml", sheet_xml(rows, editable_headers_by_sheet.get(_name, set()), bool(comments)))
+            zf.writestr(
+                f"xl/worksheets/sheet{idx}.xml",
+                sheet_xml(
+                    rows,
+                    editable_headers_by_sheet.get(_name, set()),
+                    bool(comments),
+                    sheet_tab_color(_name, rows, summary_rows),
+                ),
+            )
             if comments:
                 sheet_rels = (
                     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'

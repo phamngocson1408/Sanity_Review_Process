@@ -37,6 +37,12 @@ DEFAULT_USER = "sanity_gca_review"
 NS_MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 NS_PACKAGE_REL = "http://schemas.openxmlformats.org/package/2006/relationships"
+SEVERITY_TAB_COLORS = {
+    "fatal": "FFFF0000",
+    "error": "FFFF0000",
+    "warning": "FFFFA500",
+    "info": "FF00B050",
+}
 
 
 def xlsx_col_name(index: int) -> str:
@@ -71,7 +77,29 @@ def safe_sheet_name(name: str, used: set[str]) -> str:
     return candidate
 
 
-def worksheet_xml(rows: list[list[object]], editable_headers: set[str] | None = None) -> str:
+def sheet_tab_color(name: str, rows: list[list[object]]) -> str | None:
+    if name.casefold() in {"tree summary", "summary", "instructions", "reviewdb", "removed"} or len(rows) < 2:
+        return None
+    header = [str(value).strip().casefold() for value in rows[0]]
+    if "severity" not in header:
+        return None
+    severity_index = header.index("severity")
+    severities = {
+        str(row[severity_index]).strip().casefold()
+        for row in rows[1:]
+        if severity_index < len(row) and str(row[severity_index]).strip()
+    }
+    return next(
+        (SEVERITY_TAB_COLORS[severity] for severity in ("fatal", "error", "warning", "info") if severity in severities),
+        None,
+    )
+
+
+def worksheet_xml(
+    rows: list[list[object]],
+    editable_headers: set[str] | None = None,
+    tab_color: str | None = None,
+) -> str:
     rows = rows or [[""]]
     editable_headers = editable_headers or set()
     header = ["" if value is None else str(value) for value in rows[0]]
@@ -81,9 +109,13 @@ def worksheet_xml(rows: list[list[object]], editable_headers: set[str] | None = 
     output = [
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
         f'<worksheet xmlns="{NS_MAIN}" xmlns:r="{NS_REL}">',
+    ]
+    if tab_color:
+        output.append(f'<sheetPr><tabColor rgb="{tab_color}"/></sheetPr>')
+    output.extend([
         '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>',
         "<cols>",
-    ]
+    ])
     for column in range(1, column_count + 1):
         width = 64 if column in {4, 7, 18, 19} else 18
         output.append(f'<col min="{column}" max="{column}" width="{width}" customWidth="1"/>')
@@ -190,7 +222,10 @@ def write_xlsx(path: Path, sheets: dict[str, list[list[object]]], editable_heade
         archive.writestr("xl/_rels/workbook.xml.rels", "".join(relationships))
         archive.writestr("xl/styles.xml", styles)
         for index, (name, rows) in enumerate(items, 1):
-            archive.writestr(f"xl/worksheets/sheet{index}.xml", worksheet_xml(rows, editable_headers.get(name, set())))
+            archive.writestr(
+                f"xl/worksheets/sheet{index}.xml",
+                worksheet_xml(rows, editable_headers.get(name, set()), sheet_tab_color(name, rows)),
+            )
 
 
 def read_shared_strings(archive: zipfile.ZipFile) -> list[str]:

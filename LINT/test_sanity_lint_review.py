@@ -22,9 +22,11 @@ from sanity_lint_review import (
     review_workbook_has_unexported_changes,
     report_ordered_sheet_columns,
     sheet_xml,
+    sheet_tab_color,
     stamp_waiver_workbook_hash,
     tcl_braced_filter,
     tcl_double_quote,
+    tree_summary_matrix,
     waiver_filter_expression,
     write_xlsx,
 )
@@ -77,6 +79,71 @@ class WaiverFilterTests(unittest.TestCase):
 
 
 class WorkbookColumnTests(unittest.TestCase):
+    def test_rule_sheet_tab_color_comes_from_severity(self):
+        for severity, expected in {
+            "Fatal": "FFFF0000",
+            "Error": "FFFF0000",
+            "Warning": "FFFFA500",
+            "Info": "FF00B050",
+        }.items():
+            rows = [["Tag", "Severity"], ["RULE", severity]]
+            self.assertEqual(sheet_tab_color("RULE", rows), expected)
+            self.assertIn(f'<tabColor rgb="{expected}"/>', sheet_xml(rows, tab_color=expected))
+
+    def test_summary_is_uncolored_and_mixed_severity_uses_highest_level(self):
+        self.assertIsNone(sheet_tab_color("Tree Summary", [["Severity"], ["Warning"]]))
+        self.assertEqual(
+            sheet_tab_color("RULE", [["Severity"], ["Warning"], ["Error"]]),
+            "FFFF0000",
+        )
+
+    def test_rule_sheet_tab_color_can_come_from_tree_summary(self):
+        summary = [["Severity", "Tag"], ["Warning", "W551"]]
+        self.assertEqual(sheet_tab_color("W551", [["Tag"], ["W551"]], summary), "FFFFA500")
+
+    def test_workbook_writer_applies_tree_summary_tab_color(self):
+        sheets = {
+            "Summary": [["Severity", "Tag"], ["Warning", "W551"]],
+            "W551": [["Tag"], ["W551"]],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "review.xlsx"
+            write_xlsx(path, sheets)
+            with zipfile.ZipFile(path) as workbook:
+                rule_sheet = workbook.read("xl/worksheets/sheet2.xml").decode("utf-8")
+        self.assertIn('<sheetPr><tabColor rgb="FFFFA500"/></sheetPr>', rule_sheet)
+
+    def test_summary_is_sorted_and_colorized_by_severity(self):
+        rows = [
+            {"severity": "info", "tag": "INFO_RULE", "record_status": "NEW", "owner_action": "UNREVIEWED", "reviewer_decision": ""},
+            {"severity": "warning", "tag": "WARN_RULE", "record_status": "NEW", "owner_action": "UNREVIEWED", "reviewer_decision": "PENDING"},
+            {"severity": "error", "tag": "ERROR_RULE", "record_status": "NEW", "owner_action": "FIXED", "reviewer_decision": "DISAPPROVED"},
+            {"severity": "fatal", "tag": "FATAL_RULE", "record_status": "NEW", "owner_action": "WAIVED", "reviewer_decision": "APPROVED"},
+        ]
+        matrix = tree_summary_matrix(rows)
+        self.assertEqual(
+            matrix[0],
+            ["Severity", "Tag", "Count", "Waived", "Unreviewed", "Confirmed", "Pending by reviewer"],
+        )
+        self.assertEqual([row[0] for row in matrix[1:-1]], ["fatal", "error", "warning", "info"])
+        self.assertEqual(matrix[1][2:], ["1", "1", "0", "1", "0"])
+        self.assertEqual(matrix[2][2:], ["1", "0", "0", "1", "0"])
+        self.assertEqual(matrix[3][2:], ["1", "0", "1", "0", "1"])
+        self.assertEqual(matrix[4][2:], ["1", "0", "1", "0", "1"])
+        self.assertEqual(matrix[-1], ["TOTAL", "", "4", "1", "2", "2", "2"])
+        xml = sheet_xml(matrix, colorize_severity_rows=True)
+        self.assertEqual(xml.count(' s="4"'), len(matrix[0]) * 2)
+        self.assertEqual(xml.count(' s="5"'), len(matrix[0]))
+        self.assertEqual(xml.count(' s="6"'), len(matrix[0]))
+
+    def test_summary_has_one_row_per_tag_and_uses_highest_severity(self):
+        rows = [
+            {"severity": "info", "tag": "MIXED", "record_status": "NEW", "owner_action": "WAIVED", "reviewer_decision": "APPROVED"},
+            {"severity": "warning", "tag": "MIXED", "record_status": "NEW", "owner_action": "UNREVIEWED", "reviewer_decision": "PENDING"},
+        ]
+        matrix = tree_summary_matrix(rows)
+        self.assertEqual(matrix[1], ["warning", "MIXED", "2", "1", "1", "1", "1"])
+
     def test_script_managed_columns_are_grouped_after_review_fields(self):
         report_headers = {
             "W551": ["No.", "issue_id", "Comment", "record_status", "Tag"]

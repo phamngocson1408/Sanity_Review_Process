@@ -120,6 +120,14 @@ AUTO_FILTER_PRIORITY = [
 NS_MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 NS_PACKAGE_REL = "http://schemas.openxmlformats.org/package/2006/relationships"
+SEVERITY_TAB_COLORS = {
+    "fatal": "FFFF0000",
+    "error": "FFFF0000",
+    "warning": "FFFFA500",
+    "info": "FF00B050",
+}
+SEVERITY_ORDER = {"fatal": 0, "error": 1, "warning": 2, "info": 3}
+SEVERITY_ROW_STYLE_IDS = {"fatal": 4, "error": 4, "warning": 5, "info": 6}
 NS_CONTENT_TYPES = "http://schemas.openxmlformats.org/package/2006/content-types"
 
 REVIEW_SHEET_COLUMNS = [
@@ -921,7 +929,47 @@ def safe_sheet_name(name: str, used: set[str]) -> str:
     return candidate
 
 
-def sheet_xml(rows: list[list[object]], editable_headers: set[str] | None = None, has_comments: bool = False) -> str:
+def sheet_tab_color(
+    name: str,
+    rows: list[list[object]],
+    summary_rows: list[list[object]] | None = None,
+) -> str | None:
+    if name.casefold() in {"tree summary", "summary", "instructions", "reviewdb", "removed"} or len(rows) < 2:
+        return None
+    header = [str(value).strip().casefold() for value in rows[0]]
+    severities: set[str] = set()
+    if "severity" in header:
+        severity_index = header.index("severity")
+        severities = {
+            str(row[severity_index]).strip().casefold()
+            for row in rows[1:]
+            if severity_index < len(row) and str(row[severity_index]).strip()
+        }
+    if not severities and summary_rows:
+        summary_header = [str(value).strip().casefold() for value in summary_rows[0]]
+        if "tag" in summary_header and "severity" in summary_header:
+            tag_index = summary_header.index("tag")
+            severity_index = summary_header.index("severity")
+            severities = {
+                str(row[severity_index]).strip().casefold()
+                for row in summary_rows[1:]
+                if max(tag_index, severity_index) < len(row)
+                and str(row[tag_index]).strip().casefold() == name.strip().casefold()
+                and str(row[severity_index]).strip()
+            }
+    return next(
+        (SEVERITY_TAB_COLORS[severity] for severity in ("fatal", "error", "warning", "info") if severity in severities),
+        None,
+    )
+
+
+def sheet_xml(
+    rows: list[list[object]],
+    editable_headers: set[str] | None = None,
+    has_comments: bool = False,
+    tab_color: str | None = None,
+    colorize_severity_rows: bool = False,
+) -> str:
     if not rows:
         rows = [[""]]
     editable_headers = editable_headers or set()
@@ -929,14 +977,22 @@ def sheet_xml(rows: list[list[object]], editable_headers: set[str] | None = None
     managed_column_indexes = {
         index for index, column in enumerate(header) if column in WORKBOOK_MANAGEMENT_COLUMNS
     }
+    severity_column_index = next(
+        (index for index, column in enumerate(header) if column.strip().casefold() == "severity"),
+        None,
+    )
     col_count = max(len(row) for row in rows)
     row_count = len(rows)
     out = [
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
         f'<worksheet xmlns="{NS_MAIN}" xmlns:r="{NS_REL}">',
+    ]
+    if tab_color:
+        out.append(f'<sheetPr><tabColor rgb="{tab_color}"/></sheetPr>')
+    out.extend([
         "<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>",
         "<cols>",
-    ]
+    ])
     widths = {
         1: 7,
         2: 18,
@@ -965,6 +1021,10 @@ def sheet_xml(rows: list[list[object]], editable_headers: set[str] | None = None
             elif r_idx == 1:
                 style_id = 1 if text in editable_headers else 2
                 style = f' s="{style_id}"'
+            elif colorize_severity_rows and severity_column_index is not None and severity_column_index < len(row):
+                severity = str(row[severity_column_index]).strip().casefold()
+                if severity in SEVERITY_ROW_STYLE_IDS:
+                    style = f' s="{SEVERITY_ROW_STYLE_IDS[severity]}"'
             out.append(f'<c r="{cell_ref}"{style} t="inlineStr"><is><t xml:space="preserve">{html.escape(text)}</t></is></c>')
         out.append("</row>")
     out.extend(["</sheetData>", '<autoFilter ref="A1:{}{}"/>'.format(xlsx_col_name(col_count - 1), row_count)])
@@ -1045,6 +1105,7 @@ def write_xlsx(
     editable_headers_by_sheet = editable_headers_by_sheet or {}
     cell_notes_by_sheet = cell_notes_by_sheet or {}
     sheet_items = list(sheets.items())
+    summary_rows = sheets.get("Summary", sheets.get("Tree Summary", []))
     comments_by_sheet = [
         header_comments(rows) + cell_notes_by_sheet.get(name, [])
         for name, rows in sheet_items
@@ -1105,20 +1166,25 @@ def write_xlsx(
         '<font><sz val="11"/><name val="Calibri"/></font>'
         '<font><b/><sz val="11"/><name val="Calibri"/></font>'
         '</fonts>'
-        '<fills count="5">'
+        '<fills count="7">'
         '<fill><patternFill patternType="none"/></fill>'
         '<fill><patternFill patternType="gray125"/></fill>'
         '<fill><patternFill patternType="solid"><fgColor rgb="FFC6EFCE"/><bgColor indexed="64"/></patternFill></fill>'
         '<fill><patternFill patternType="solid"><fgColor rgb="FFD9D9D9"/><bgColor indexed="64"/></patternFill></fill>'
         '<fill><patternFill patternType="solid"><fgColor rgb="FFFFF2CC"/><bgColor indexed="64"/></patternFill></fill>'
+        '<fill><patternFill patternType="solid"><fgColor rgb="FFFFC7CE"/><bgColor indexed="64"/></patternFill></fill>'
+        '<fill><patternFill patternType="solid"><fgColor rgb="FFFFE699"/><bgColor indexed="64"/></patternFill></fill>'
         '</fills>'
         '<borders count="1"><border/></borders>'
         '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-        '<cellXfs count="4">'
+        '<cellXfs count="7">'
         '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
         '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'
         '<xf numFmtId="0" fontId="1" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'
         '<xf numFmtId="0" fontId="1" fillId="4" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'
+        '<xf numFmtId="0" fontId="0" fillId="5" borderId="0" xfId="0" applyFill="1"/>'
+        '<xf numFmtId="0" fontId="0" fillId="6" borderId="0" xfId="0" applyFill="1"/>'
+        '<xf numFmtId="0" fontId="0" fillId="2" borderId="0" xfId="0" applyFill="1"/>'
         '</cellXfs>'
         '</styleSheet>'
     )
@@ -1138,7 +1204,16 @@ def write_xlsx(
         zf.writestr("xl/styles.xml", styles)
         for idx, (_name, rows) in enumerate(sheet_items, start=1):
             comments = comments_by_sheet[idx - 1]
-            zf.writestr(f"xl/worksheets/sheet{idx}.xml", sheet_xml(rows, editable_headers_by_sheet.get(_name, set()), bool(comments)))
+            zf.writestr(
+                f"xl/worksheets/sheet{idx}.xml",
+                sheet_xml(
+                    rows,
+                    editable_headers_by_sheet.get(_name, set()),
+                    bool(comments),
+                    sheet_tab_color(_name, rows, summary_rows),
+                    _name.casefold() in {"tree summary", "summary"},
+                ),
+            )
             if comments:
                 sheet_rels = (
                     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -1394,10 +1469,16 @@ def xlsx_row_fields(source: dict[str, str]) -> dict[str, str]:
 
 def severity_by_tag_from_workbook(workbook_rows: dict[str, list[dict[str, str]]]) -> dict[str, str]:
     severity_by_tag: dict[str, str] = {}
-    for row in workbook_rows.get("Tree Summary", []):
+    summary_rows = workbook_rows.get("Summary", workbook_rows.get("Tree Summary", []))
+    for row in summary_rows:
         tag = norm(row.get("Tag"))
-        if tag:
-            severity_by_tag[tag] = norm(row.get("Severity"))
+        severity = norm(row.get("Severity"))
+        if tag and (
+            tag not in severity_by_tag
+            or SEVERITY_ORDER.get(severity.casefold(), 99)
+            < SEVERITY_ORDER.get(severity_by_tag[tag].casefold(), 99)
+        ):
+            severity_by_tag[tag] = severity
     return severity_by_tag
 
 
@@ -1640,22 +1721,62 @@ def row_to_report_sheet(row: dict[str, str], columns: list[str], index: int, use
 
 
 def tree_summary_matrix(rows: list[dict[str, str]]) -> list[list[str]]:
-    header = ["Severity", "Stage", "Tag", "Count", "Waived", "Compressed", "Confirmed", "Remaining"]
+    header = ["Severity", "Tag", "Count", "Waived", "Unreviewed", "Confirmed", "Pending by reviewer"]
     active = [row for row in rows if row.get("record_status") != "REMOVED"]
-    grouped: dict[tuple[str, str], dict[str, int | str]] = OrderedDict()
+    grouped: dict[str, dict[str, int | str]] = OrderedDict()
     for row in active:
-        key = (row.get("severity", ""), row.get("tag", ""))
-        if key not in grouped:
-            grouped[key] = {"count": 0, "waived": 0, "stage": ""}
-        if row.get("owner_action", "").upper() == "WAIVED":
-            grouped[key]["waived"] = int(grouped[key]["waived"]) + 1
+        tag = row.get("tag", "")
+        severity = row.get("severity", "")
+        if tag not in grouped:
+            grouped[tag] = {
+                "severity": severity,
+                "count": 0,
+                "waived": 0,
+                "unreviewed": 0,
+                "confirmed": 0,
+                "pending": 0,
+            }
+        counts = grouped[tag]
+        if SEVERITY_ORDER.get(severity.casefold(), 99) < SEVERITY_ORDER.get(str(counts["severity"]).casefold(), 99):
+            counts["severity"] = severity
+        counts["count"] = int(counts["count"]) + 1
+        owner_action = row.get("owner_action", "").upper()
+        if owner_action == "WAIVED":
+            counts["waived"] = int(counts["waived"]) + 1
+        elif owner_action in {"", "UNREVIEWED"}:
+            counts["unreviewed"] = int(counts["unreviewed"]) + 1
+        reviewer_decision = row.get("reviewer_decision", "").upper()
+        if reviewer_decision in {"APPROVED", "DISAPPROVED"}:
+            counts["confirmed"] = int(counts["confirmed"]) + 1
         else:
-            grouped[key]["count"] = int(grouped[key]["count"]) + 1
+            counts["pending"] = int(counts["pending"]) + 1
     matrix = [header]
-    for (severity, tag), counts in grouped.items():
-        confirmed = int(counts["count"]) + int(counts["waived"])
-        matrix.append([severity, str(counts["stage"]), tag, str(counts["count"]), str(counts["waived"]), "0", str(confirmed), str(counts["count"])])
-    matrix.append(["TOTAL", "", "", str(sum(1 for r in active if r.get("owner_action", "").upper() != "WAIVED")), str(sum(1 for r in active if r.get("owner_action", "").upper() == "WAIVED")), "0", str(len(active)), ""])
+    ordered_groups = sorted(
+        grouped.items(),
+        key=lambda item: (
+            SEVERITY_ORDER.get(str(item[1]["severity"]).strip().casefold(), 99),
+            item[0].casefold(),
+        ),
+    )
+    for tag, counts in ordered_groups:
+        matrix.append([
+            str(counts["severity"]),
+            tag,
+            str(counts["count"]),
+            str(counts["waived"]),
+            str(counts["unreviewed"]),
+            str(counts["confirmed"]),
+            str(counts["pending"]),
+        ])
+    matrix.append([
+        "TOTAL",
+        "",
+        str(len(active)),
+        str(sum(row.get("owner_action", "").upper() == "WAIVED" for row in active)),
+        str(sum(row.get("owner_action", "").upper() in {"", "UNREVIEWED"} for row in active)),
+        str(sum(row.get("reviewer_decision", "").upper() in {"APPROVED", "DISAPPROVED"} for row in active)),
+        str(sum(row.get("reviewer_decision", "").upper() not in {"APPROVED", "DISAPPROVED"} for row in active)),
+    ])
     return matrix
 
 
@@ -1664,7 +1785,7 @@ def export_review_workbook(rows: list[dict[str, str]], xlsx_path: Path, summary_
     sheets: OrderedDict[str, list[list[object]]] = OrderedDict()
     editable_headers_by_sheet: dict[str, set[str]] = {}
     cell_notes_by_sheet: dict[str, list[tuple[str, str, int]]] = {}
-    sheets["Tree Summary"] = tree_summary_matrix(rows)
+    sheets["Summary"] = tree_summary_matrix(rows)
     report_headers = workbook_headers(report_excel) if report_excel else OrderedDict()
     extras_by_sheet, user_extra_values = collect_user_extra_columns(previous_excel, report_headers)
 
